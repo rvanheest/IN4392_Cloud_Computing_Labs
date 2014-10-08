@@ -1,11 +1,19 @@
 package examples;
 
+import java.io.File;
+import java.io.IOException;
+
+import org.apache.commons.io.FileUtils;
 import org.opennebula.client.Client;
 import org.opennebula.client.OneResponse;
 import org.opennebula.client.vm.VirtualMachine;
 import org.opennebula.client.vm.VirtualMachinePool;
 
 public class VMachineSample {
+	
+	public static String vmTemplate(File file) throws IOException {
+		return FileUtils.readFileToString(file);
+	}
 
 	public static void main(String[] args) {
 		// Let's try some of the OpenNebula Cloud API functionality for VMs.
@@ -25,18 +33,19 @@ public class VMachineSample {
 			// This VM template is a valid one, but it will probably fail to run
 			// if we try to deploy it; the path for the image is unlikely to
 			// exist.
-			String vmTemplate = "NAME     = vm_from_java    CPU = 0.1    MEMORY = 64\n"
-					+ "DISK     = [\n"
-					+ "\tsource   = \"/home/user/vmachines/ttylinux/ttylinux.img\",\n"
-					+ "\ttarget   = \"hda\",\n" + "\treadonly = \"no\" ]\n"
-					+ "# NIC     = [ NETWORK = \"Non existing network\" ]\n"
-					+ "FEATURES = [ acpi=\"no\" ]";
+//			String vmTemplate = "NAME     = vm_from_java    CPU = 0.1    MEMORY = 64\n"
+//					+ "DISK     = [\n"
+//					+ "\tsource   = \"/home/cld1464/OpenNebula/centos-smallnet-qcow2.one\",\n"
+//					+ "\ttarget   = \"hda\",\n" + "\treadonly = \"no\" ]\n"
+//					+ "# NIC     = [ NETWORK = \"Non existing network\" ]\n"
+//					+ "FEATURES = [ acpi=\"no\" ]";
+			String vmTemplate = vmTemplate(new File("/home/cld1464/OpenNebula/centos-smallnet-qcow2.one"));
 
 			// You can try to uncomment the NIC line, in that case OpenNebula
 			// won't be able to insert this machine in the database.
 
-			System.out.println("Virtual Machine Template:\n" + vmTemplate);
-			System.out.println();
+//			System.out.println("Virtual Machine Template:\n" + vmTemplate);
+//			System.out.println();
 
 			System.out.print("Trying to allocate the virtual machine... ");
 			OneResponse rc = VirtualMachine.allocate(oneClient, vmTemplate);
