@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Step 1: Go to familiar places
-cd /home/ec2-user/
+cd /home/ec2-user/worker-workspace/
 
 #Step 2: Leave traces that you were there
 echo Its-a me >> Mario.txt
