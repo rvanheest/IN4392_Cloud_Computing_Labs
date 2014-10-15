@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #Step 1: Go to familiar places
+mkdir /home/ec2-user/worker-workspace/
 cd /home/ec2-user/worker-workspace/
 
 #Step 2: Leave traces that you were there
