@@ -3,7 +3,7 @@
 #Step 1: Go to familiar places
 rm -r /home/ubuntu/worker-workspace/
 mkdir /home/ubuntu/worker-workspace/
-cd /home/ec2-user/worker-workspace/
+cd /home/ubuntu/worker-workspace/
 
 #Step 2: Leave traces that you were there
 echo Its-a me >> Mario.txt
