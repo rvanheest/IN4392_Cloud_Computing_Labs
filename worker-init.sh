@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #Step 1: Go to familiar places
+rm -r /home/ec2-user/worker-workspace/
 mkdir /home/ec2-user/worker-workspace/
 cd /home/ec2-user/worker-workspace/
 
