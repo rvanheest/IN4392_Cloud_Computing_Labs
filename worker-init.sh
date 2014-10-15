@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #Step 1: Go to familiar places
-rm -r /home/ec2-user/worker-workspace/
-mkdir /home/ec2-user/worker-workspace/
+rm -r /home/ubuntu/worker-workspace/
+mkdir /home/ubuntu/worker-workspace/
 cd /home/ec2-user/worker-workspace/
 
 #Step 2: Leave traces that you were there
@@ -15,5 +15,5 @@ mv dummy.sh.fix dummy.sh
 chmod +x dummy.sh
 
 #Step 4: Execute said someone
-nohup /bin/bash dummy.sh 0<&- &> /home/ec2-user/deamon.log &
+nohup /bin/bash dummy.sh 0<&- &> /home/ubuntu/deamon.log &
 
