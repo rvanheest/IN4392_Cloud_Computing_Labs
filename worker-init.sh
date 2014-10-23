@@ -24,7 +24,7 @@ chmod +x dynamic.sh
 echo worker-init.sh: Dynamic part of script download >> $LOG
 
 #Step 4: Execute said someone
-#nohup /bin/bash dynamic.sh 0<&- &> /home/ubuntu/deamon.log &
-/bin/bash dynamic.sh
+nohup /bin/bash dynamic.sh 0<&- &> /home/ubuntu/deamon.log &
+#/bin/bash dynamic.sh
 echo worker-init.sh: Dynamic part of script executed >> $LOG
 
