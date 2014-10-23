@@ -1,0 +1,41 @@
+\documentclass{stylesheet}
+
+\usepackage{url}
+\usepackage{enumerate}
+\usepackage[english]{babel}%spell check
+\usepackage[colorinlistoftodos]{todonotes}%todo
+\usepackage{etoolbox}%Remove the ugly copyright from the template :-)
+\makeatletter%Remove the ugly copyright from the template :-)
+\patchcmd{\maketitle}{\@copyrightspace}{}{}{}%Remove the ugly copyright from the template :-)
+\makeatother%Remove the ugly copyright from the template :-)
+
+\usepackage[nameinlink,capitalise]{cleveref}
+
+\begin{document}
+\title{Cloud Computing}
+
+\numberofauthors{2} 
+\author{
+% 1st. author
+\alignauthor
+Christos Froussios\\
+       \affaddr{4322754}\\
+       \email{C.Froussios@student.tudelft.nl}
+% 2nd. author
+\alignauthor
+Richard van Heest\\
+       \affaddr{4086570}\\
+       \email{A.W.M.vanHeest@student.tudelft.nl}
+}
+
+\maketitle
+
+\begin{abstract}
+
+\end{abstract}
+
+\section{Introduction}
+
+\bibliographystyle{abbrv}
+\bibliography{references}
+\end{document}
