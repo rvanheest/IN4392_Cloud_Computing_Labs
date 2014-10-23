@@ -13,8 +13,8 @@ echo $0 : starting >> $LOG
 
 # Get worker executable
 wget https://www.dropbox.com/s/nnhdjevstwx552k/uninode.jar?dl=0 -O $EXECUTABLE
-echo $0 : downloaded $EXECUTABLE
-echo $0 : not executing $EXECUTABLE yet
+echo $0 : downloaded $EXECUTABLE >> $LOG
+echo $0 : not executing $EXECUTABLE yet >> $LOG
 
 # Be a deamon and live forever
 while true
