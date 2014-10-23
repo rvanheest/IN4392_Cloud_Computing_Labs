@@ -6,7 +6,7 @@ mkdir /home/ubuntu/worker-workspace/
 cd /home/ubuntu/worker-workspace/
 
 #Step 2: Leave traces that you were there
-echo Its-a me >> Mario.txt
+echo Its-a me 123 >> Mario.txt
 
 #Step 3: Get someone more important than you
 wget https://www.dropbox.com/s/0m7tbj0xj4ht1gh/dummy.sh?dl=0 -O dummy.sh
