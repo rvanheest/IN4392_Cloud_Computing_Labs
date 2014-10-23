@@ -1,10 +1,20 @@
 #!/bin/bash
 
+# This script is dynamically loaded onto every worker instance on boot.
+# Use it to get the lastest version of the worker binaries and execute them.
+
 LOG="init.log"
+EXECUTABLE="uninode.jar"
+
+cd cd /home/ubuntu/worker-workspace/
 
 # Let everyone know you ran
-#echo Its a me >> /home/ubuntu/Luigi.txt
-echo $0 starting >> $LOG
+echo $0 : starting >> $LOG
+
+# Get worker executable
+wget https://www.dropbox.com/s/nnhdjevstwx552k/uninode.jar?dl=0 -O $EXECUTABLE
+echo $0 : downloaded $EXECUTABLE
+echo $0 : not executing $EXECUTABLE yet
 
 # Be a deamon and live forever
 while true
