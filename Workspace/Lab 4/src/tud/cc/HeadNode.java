@@ -15,7 +15,7 @@ public class HeadNode
 {
 	
 	public static final int HeadServerPort = 6048;
-	public static final String HeadServerAddress = "ec2-54-171-121-60.eu-west-1.compute.amazonaws.com";
+	//public static final String HeadServerAddress = "ec2-54-171-121-60.eu-west-1.compute.amazonaws.com";
 	
 
 	ServerSocket serverSocket = null;    
