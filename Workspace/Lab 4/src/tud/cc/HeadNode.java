@@ -11,28 +11,31 @@ import amazonTests.NodeDetails;
 
 
 public class HeadNode 
+	implements AutoCloseable
 {
 	
 	public static final int HeadServerPort = 6048;
 	public static final String HeadServerAddress = "ec2-54-171-121-60.eu-west-1.compute.amazonaws.com";
 	
 
-	public HeadNode()
-	{
-	}
+	ServerSocket serverSocket = null;    
 	
-	
-	public void chat()
+	public HeadNode() throws IOException
 	{
 		System.out.println("Starting head chat");
 		System.out.println("Listening at " + HeadServerPort);
-		
-		try ( 
-			    ServerSocket serverSocket = new ServerSocket(HeadServerPort);
-			    Socket clientSocket = serverSocket.accept();
-			    PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-			    BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			)
+		this.serverSocket = new ServerSocket(HeadServerPort);  
+	}
+	
+	
+	/**
+	 * Accept one incoming chat connection and exchange messages
+	 */
+	public void chat()
+	{
+		try (Socket clientSocket = serverSocket.accept();
+			 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+		     BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));)
 		{
 			String write = "Is this the client?\n";
 			System.out.print("Writing: " + write);
@@ -48,6 +51,20 @@ public class HeadNode
 		catch(IOException e)
 		{
 		}
+	}
+	
+	
+	/**
+	 * AutoCloseable implementation
+	 */
+	@Override
+	public void close() throws IOException
+	{
+		if (this.serverSocket != null)
+			this.serverSocket.close();
+		this.serverSocket = null;
+		
+		System.out.println("Head node closed");
 	}
 	
 	
@@ -86,11 +103,16 @@ public class HeadNode
 	
 	public static void beHead()
 	{
-		HeadNode head = new HeadNode();
-		
-		head.chat();
+		try (HeadNode head = new HeadNode();)
+		{
+			NodeDetails workerDetails = head.startWorker();
+			System.out.println("Started: " + workerDetails);
+			head.chat();
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
 	}
-	
-	
 	
 }
