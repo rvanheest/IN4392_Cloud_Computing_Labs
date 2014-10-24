@@ -5,6 +5,7 @@
 
 LOG="init.log"
 EXECUTABLE="uninode.jar"
+HEAD="ec2-54-171-121-60.eu-west-1.compute.amazonaws.com"
 
 cd cd /home/ubuntu/worker-workspace/
 
@@ -14,6 +15,9 @@ echo $0 : starting >> $LOG
 # Get worker executable
 wget https://www.dropbox.com/s/nnhdjevstwx552k/uninode.jar?dl=0 -O $EXECUTABLE
 echo $0 : downloaded $EXECUTABLE >> $LOG
+
+# Start worker
+nohup java -jar $EXECUTABLE worker $HEAD 0<&- &> /home/ubuntu/worker-workspace/worker.log &
 echo $0 : not executing $EXECUTABLE yet >> $LOG
 
 # Be a deamon and live forever
