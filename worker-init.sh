@@ -17,7 +17,7 @@ cd /home/ubuntu/worker-workspace/
 echo worker-init.sh: The workspace has been initialized >> $LOG
 
 #Step 3: Get someone more important than you
-wget $DYNAMIC -O dynamic.sh
+wget $DYNAMIC -nv -O dynamic.sh
 awk '{ sub("\r$", ""); print }' dynamic.sh > dynamic.sh.fix
 mv dynamic.sh.fix dynamic.sh
 chmod +x dynamic.sh

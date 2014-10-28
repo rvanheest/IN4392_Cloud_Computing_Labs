@@ -39,7 +39,7 @@ public class EC2CloudService implements CloudService {
 	@Override
 	public NodeDetails leaseNode(Configurations config) {
 		// TODO: config definition
-		String imageName = "ami-748e2903";
+		String imageName = "ami-5af0592d";
 		String instanceType = "t2.micro";
 		EC2CreateInstanceWorker worker = new EC2CreateInstanceWorker(this.securityGroup, imageName, instanceType, this.amazonEC2Client);
 		Future<NodeDetails> nodeDetails = this.executorService.submit(worker);

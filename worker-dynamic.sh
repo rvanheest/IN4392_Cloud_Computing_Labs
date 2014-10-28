@@ -13,7 +13,7 @@ cd cd /home/ubuntu/worker-workspace/
 echo $0 : starting >> $LOG
 
 # Get worker executable
-wget https://www.dropbox.com/s/nnhdjevstwx552k/uninode.jar?dl=0 -O $EXECUTABLE
+wget https://www.dropbox.com/s/nnhdjevstwx552k/uninode.jar?dl=0 -nv -O $EXECUTABLE
 echo $0 : downloaded $EXECUTABLE >> $LOG
 
 # Start worker
