@@ -99,8 +99,8 @@ public class HeadNode
 			
 			BufferedImage[] images = new BufferedImage[]
 			{
-				ImageIO.read(new File("~/images/Eiger.JPG")),
-				//ImageIO.read(new File("~/images/Apen.JPG"))
+				ImageIO.read(new File("images/Eiger.JPG")),
+				//ImageIO.read(new File("images/Apen.JPG"))
 			};
 			
 			for (BufferedImage image : images) 

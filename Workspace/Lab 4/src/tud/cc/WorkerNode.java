@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 public class WorkerNode 
 {	
@@ -45,8 +46,20 @@ public class WorkerNode
 	{
 //		WorkerNode worker = new WorkerNode();
 //		worker.chat(server);
-		Client client = new Client();
-		client.startProcessing(server);
+		try (Client client = new Client(server)) {
+			while (true) {
+				Thread.sleep(10000);
+			}
+		}
+		catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+		catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	
