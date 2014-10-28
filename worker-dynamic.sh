@@ -5,7 +5,7 @@
 
 LOG="init.log"
 EXECUTABLE="uninode.jar"
-HEAD="ec2-54-171-121-60.eu-west-1.compute.amazonaws.com"
+HEAD="ip-172-31-10-31.eu-west-1.compute.internal"
 
 cd cd /home/ubuntu/worker-workspace/
 
