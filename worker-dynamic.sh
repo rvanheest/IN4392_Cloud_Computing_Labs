@@ -18,7 +18,7 @@ echo $0 : downloaded $EXECUTABLE >> $LOG
 
 # Start worker
 nohup java -jar $EXECUTABLE worker $HEAD 0<&- &> /home/ubuntu/worker-workspace/worker.log &
-echo $0 : not executing $EXECUTABLE yet >> $LOG
+echo $0 : executing $EXECUTABLE >> $LOG
 
 # Be a deamon and live forever
 while true
