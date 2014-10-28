@@ -125,9 +125,10 @@ public class Client {
 		}
 	}
 
-	public static void main(String[] args) {
-//		try (Socket socket = new Socket("localhost", 4444);
-		try (Socket socket = new Socket(InetAddress.getByName(args[0]), 6048);
+	
+	public void startProcessing(String head)
+	{
+		try (Socket socket = new Socket(InetAddress.getByName(head), 6048);
 				ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
 				ObjectInputStream in = new ObjectInputStream(socket.getInputStream())) {
 			BlockingQueue<byte[]> inputQueue = new LinkedBlockingQueue<>();
@@ -138,10 +139,14 @@ public class Client {
 			ProcessingThread process1 = new ProcessingThread(inputQueue, outputQueue);
 			ProcessingThread process2 = new ProcessingThread(inputQueue, outputQueue);
 			
+			System.out.println("Starting processing threads...");
+			
 			input.start();
 			output.start();
 			process1.start();
 			process2.start();
+			
+			System.out.println("All processing threads started.");
 			
 			System.in.read();
 		}
@@ -149,5 +154,11 @@ public class Client {
 			e.printStackTrace();
 			System.exit(1);
 		}
+	}
+	
+	
+	public static void main(String[] args) {
+		Client client = new Client();
+		client.startProcessing(args[0]);
 	}
 }

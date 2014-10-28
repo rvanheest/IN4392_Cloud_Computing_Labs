@@ -1,5 +1,7 @@
 package tud.cc;
 
+import imageProcessing.Client;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -8,13 +10,9 @@ import java.net.Socket;
 
 public class WorkerNode 
 {	
-	public static void main(String[] args)
-	{
-		String server = (args.length > 0) ? args[0] : "localhost";		
-		chat(server);
-	}
+
 	
-	public static void chat(String head)
+	public void chat(String head)
 	{		
 		System.out.println("Starting worker chat");
 		System.out.println("Reaching to " + head + ":" + HeadNode.HeadServerPort );
@@ -45,7 +43,18 @@ public class WorkerNode
 	
 	public static void beWorker(String server)
 	{
-		chat(server);
+//		WorkerNode worker = new WorkerNode();
+//		worker.chat(server);
+		Client client = new Client();
+		client.startProcessing(server);
 	}
+	
+	
+	public static void main(String[] args)
+	{
+		String server = (args.length > 0) ? args[0] : "localhost";
+		
+		beWorker(server);
+	}	
 
 }
