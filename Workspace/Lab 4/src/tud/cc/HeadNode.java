@@ -3,6 +3,9 @@ package tud.cc;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.*;
+import java.nio.channels.UnsupportedAddressTypeException;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -17,44 +20,23 @@ public class HeadNode
 	implements AutoCloseable
 {
 	
-	public static final int HeadServerPort = 6048;
-	//public static final String HeadServerAddress = "ec2-54-171-121-60.eu-west-1.compute.amazonaws.com";
+	public static final int HeadWorkerPort = 6048;
+	public static final int HeadClientPort = 6049;	
 	
 
-	ServerSocket serverSocket = null;    
+	private final ServerSocket workerSocket;
+	private final ServerSocket clientSocket;
+	private final BlockingQueue<Task> jobQueue = new java.util.concurrent.LinkedBlockingDeque<Task>();
+	private final ConcurrentHashMap<InetAddress, WorkerHandle> workerPool = new ConcurrentHashMap<>();
+	
 	
 	public HeadNode() throws IOException
 	{
-		System.out.println("Starting head chat");
-		System.out.println("Listening at " + HeadServerPort);
-		this.serverSocket = new ServerSocket(HeadServerPort);  
-	}
-	
-	
-	/**
-	 * Accept one incoming chat connection and exchange messages
-	 */
-	public void chat()
-	{
-		try (Socket clientSocket = serverSocket.accept();
-			 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-		     BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));)
-		{
-			String write = "Is this the client?\n";
-			System.out.print("Writing: " + write);
-			out.write(write);
-			out.flush();
-			
-			System.out.print("Reading: ");
-			String read = in.readLine();
-			System.out.print(read);
-			
-			System.out.println();			
-		}
-		catch(IOException e)
-		{
-			
-		}
+		System.out.println("Initialising head node...");
+		this.workerSocket = new ServerSocket(HeadWorkerPort);
+		System.out.println("Listening for workers at " + HeadWorkerPort);
+		this.clientSocket = new ServerSocket(HeadClientPort);
+		System.out.println("Listening for clients at " + HeadClientPort);
 	}
 	
 	
@@ -64,9 +46,10 @@ public class HeadNode
 	@Override
 	public void close() throws IOException
 	{
-		if (this.serverSocket != null)
-			this.serverSocket.close();
-		this.serverSocket = null;
+		if (this.workerSocket != null)
+			this.workerSocket.close();
+		if (this.clientSocket != null)
+			this.clientSocket.close();
 		
 		System.out.println("Head node closed");
 	}
@@ -91,7 +74,7 @@ public class HeadNode
 	
 	public void acceptAndFeed()
 	{
-		try (Socket clientSocket = serverSocket.accept();
+		try (Socket clientSocket = workerSocket.accept();
 			 ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
 			 ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream())) 
 		{
@@ -131,6 +114,171 @@ public class HeadNode
 	}
 	
 	
+	
+	/**
+	 * This receives jobs asynchronously from the client.
+	 * Incoming jobs are queued in the job queue.
+	 * 
+	 * @author Chris
+	 *
+	 */
+	public static class ClientReceptionThread
+		extends Thread
+		implements AutoCloseable
+	{
+		private final ServerSocket socket;
+		private final BlockingQueue<Task> jobQueue;
+		
+		public ClientReceptionThread(int port, BlockingQueue<Task> jobQueue) throws IOException
+		{
+			this.socket = new ServerSocket(port);
+			this.jobQueue = jobQueue;
+		}
+		
+		@Override
+		public void run()
+		{
+			throw new UnsupportedOperationException("ReceptionThread.run");
+			
+				// TODO Accept connection
+				
+				// TODO Read image
+				
+				// TODO Queue task + connection
+		}
+
+		@Override
+		public void close() throws Exception
+		{
+			this.socket.close();
+			
+		}
+	}
+	
+	
+	/**
+	 * Accepts connections from new workers
+	 * 
+	 * @author Chris
+	 *
+	 */
+	public static class WorkerReceptionThread
+		extends Thread
+		implements AutoCloseable
+	{
+		private final ServerSocket socket;
+		private final ConcurrentHashMap<InetAddress, WorkerHandle> workerPool;
+		
+		public WorkerReceptionThread(int port, ConcurrentHashMap<InetAddress, WorkerHandle> workerPool) throws IOException
+		{
+			this.socket = new ServerSocket(port);
+			this.workerPool = workerPool;
+		}
+		
+		
+		@Override
+		public void run()
+		{
+			//throw new UnsupportedOperationException();
+			
+			// Loop: accept connections from workers
+			while (true)
+			{
+				try (Socket clientSocket = socket.accept();
+					 ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
+					 ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream())) 
+				{
+					InetAddress workerAddress = clientSocket.getInetAddress();
+					System.out.println("Accepted worker connection: " + clientSocket.getInetAddress().getCanonicalHostName());
+					
+					// TODO Create handle
+					WorkerHandle handle = new WorkerHandle(clientSocket);
+					handle.start();
+					
+					// TODO Add to worker pool
+					workerPool.put(workerAddress, handle);
+				}
+				catch (Exception e)
+				{
+					e.printStackTrace();
+				}
+			}
+		}
+
+
+		@Override
+		public void close() throws Exception 
+		{
+			this.socket.close();
+		}
+	}
+	
+	
+	public static class SchedulerThread
+		extends Thread
+	{
+		private final BlockingQueue<Task> jobQueue;
+		// TODO worker pool
+		
+		
+		public SchedulerThread(BlockingQueue<Task> jobQueue/*TODO worker pool*/)
+		{
+			this.jobQueue = jobQueue;
+		}
+		
+		
+		@Override
+		public void run()
+		{
+			throw new UnsupportedOperationException("SchedulerThread.run");
+			
+			// TODO Take job from queue
+			
+			// TODO Send to worker
+		}
+	}
+	
+	
+	/**
+	 * Handles input from one worker
+	 * @author Chris
+	 */
+	public static class WorkerHandle
+		extends Thread
+		implements AutoCloseable
+	{
+		
+		private final Socket workerSocket;
+		private final ObjectInputStream in;
+		private final ObjectOutputStream out;
+		
+		public WorkerHandle(Socket workerSocket) throws IOException
+		{
+			this.workerSocket = workerSocket;
+			this.in = new ObjectInputStream(workerSocket.getInputStream());
+			this.out = new ObjectOutputStream(workerSocket.getOutputStream());
+		}
+		
+		@Override
+		public void run()
+		{
+			throw new UnsupportedOperationException("WorkerHandle.run");
+			
+			// TODO read processed jobs from worker
+			
+			// TODO queue response to client --> asynchronous because clients are unreliable
+		}
+
+		@Override
+		public void close() throws Exception 
+		{
+			this.in.close();
+			this.out.close();
+			this.workerSocket.close();
+		}
+	}
+	
+	
 	public static byte[] toByteArray(BufferedImage image) throws IOException {
 		try (ByteArrayOutputStream outbytes = new ByteArrayOutputStream()) {
 			ImageIO.write(image, "JPG", outbytes);
@@ -151,7 +299,6 @@ public class HeadNode
 		{
 			NodeDetails workerDetails = head.startWorker();
 			System.out.println("Leased: " + workerDetails);
-			//head.chat();
 			head.acceptAndFeed();
 		}
 		catch (IOException e)

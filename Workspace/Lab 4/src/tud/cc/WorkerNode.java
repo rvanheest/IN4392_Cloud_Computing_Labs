@@ -16,10 +16,10 @@ public class WorkerNode
 	public void chat(String head)
 	{		
 		System.out.println("Starting worker chat");
-		System.out.println("Reaching to " + head + ":" + HeadNode.HeadServerPort );
+		System.out.println("Reaching to " + head + ":" + HeadNode.HeadWorkerPort );
 		
 		try (
-			    Socket kkSocket = new Socket(head, HeadNode.HeadServerPort);
+			    Socket kkSocket = new Socket(head, HeadNode.HeadWorkerPort);
 			    PrintWriter out = new PrintWriter(kkSocket.getOutputStream(), true);
 			    BufferedReader in = new BufferedReader(
 			        new InputStreamReader(kkSocket.getInputStream()));
