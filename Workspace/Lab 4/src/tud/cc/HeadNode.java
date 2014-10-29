@@ -4,6 +4,8 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.*;
 import java.nio.channels.UnsupportedAddressTypeException;
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -11,9 +13,26 @@ import java.util.concurrent.Executors;
 
 import javax.imageio.ImageIO;
 
+import data.Request;
 import amazonTests.Configurations;
 import amazonTests.EC2CloudService;
 import amazonTests.NodeDetails;
+
+
+abstract class CloseableThread
+	extends Thread
+	implements AutoCloseable
+{
+	public CloseableThread()
+	{
+	}
+	
+	public CloseableThread(String name)
+	{
+		super(name);
+	}
+}
+
 
 
 public class HeadNode 
@@ -24,19 +43,26 @@ public class HeadNode
 	public static final int HeadClientPort = 6049;	
 	
 
-	private final ServerSocket workerSocket;
-	private final ServerSocket clientSocket;
+//	private final ServerSocket workerSocket;
+//	private final ServerSocket clientSocket;
 	private final BlockingQueue<Task> jobQueue = new java.util.concurrent.LinkedBlockingDeque<Task>();
 	private final ConcurrentHashMap<InetAddress, WorkerHandle> workerPool = new ConcurrentHashMap<>();
+	
+	private ArrayList<CloseableThread> threads = new ArrayList<>();
 	
 	
 	public HeadNode() throws IOException
 	{
 		System.out.println("Initialising head node...");
-		this.workerSocket = new ServerSocket(HeadWorkerPort);
-		System.out.println("Listening for workers at " + HeadWorkerPort);
-		this.clientSocket = new ServerSocket(HeadClientPort);
-		System.out.println("Listening for clients at " + HeadClientPort);
+		
+		// TODO Start all the threads
+		threads.add(new HeadNode.WorkerReceptionThread(HeadWorkerPort, workerPool));
+		threads.add(new HeadNode.ClientReceptionThread(HeadClientPort, jobQueue));
+		threads.add(new HeadNode.SchedulerThread(jobQueue, workerPool));
+		// TODO response thread
+		// TODO monitor thread
+		for (Thread t : threads)
+			t.start();
 	}
 	
 	
@@ -46,12 +72,56 @@ public class HeadNode
 	@Override
 	public void close() throws IOException
 	{
-		if (this.workerSocket != null)
-			this.workerSocket.close();
-		if (this.clientSocket != null)
-			this.clientSocket.close();
+		// Close every thread
+		for (CloseableThread t : threads)
+		{
+			try 
+			{
+				t.close();
+			} catch (Exception e) {	}
+		}
 		
 		System.out.println("Head node closed");
+	}
+
+
+	/**
+	 * A blocking function that starts a command-line loop on this thread.
+	 */
+	public void runCommandLine() 
+	{
+		try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in)))
+		{
+			System.out.println("Command-line started");
+			boolean isCl = true; 
+			while (isCl)
+			{
+				System.out.print("> ");
+				String command = in.readLine().trim();
+				switch (command)
+				{
+					case "workers":
+						for (InetAddress inet : workerPool.keySet())
+							System.out.println(inet.getCanonicalHostName());
+						break;
+					case "queue":
+						for (Task job : jobQueue)
+							System.out.println(job);
+						break;
+					case "ping":
+						System.out.println("pong");
+						break;
+					case "break":
+						isCl = false;
+						break;
+					default:
+						System.out.println("Unknown command " + command);
+						break;
+				}
+			}
+			System.out.println("Command-line ended");
+		}
+		catch (Exception e)	{ }
 	}
 	
 	
@@ -72,47 +142,47 @@ public class HeadNode
 	}
 	
 	
-	public void acceptAndFeed()
-	{
-		try (Socket clientSocket = workerSocket.accept();
-			 ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-			 ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream())) 
-		{
-			System.out.println("Accepted connection: " + clientSocket.getInetAddress().getCanonicalHostName());
-			
-			BufferedImage[] images = new BufferedImage[]
-			{
-				ImageIO.read(new File("images/Eiger.JPG")),
-				//ImageIO.read(new File("images/Apen.JPG"))
-			};
-			
-			for (BufferedImage image : images) 
-			{
-    			byte[] imageBytes = toByteArray(image);
-    			System.out.println("SERVER - bytes: " + imageBytes.length);
-    			
-    			out.writeObject(imageBytes);
-    			System.out.println("SERVER - send image");
-			}
-			
-			for (int i = 0; i < images.length; i++)
-			{
-    			byte[] resultBytes = (byte[]) in.readObject();
-    			System.out.println("SERVER - received bytes: " + resultBytes.length);
-    			
-    			BufferedImage result = toBufferedImage(resultBytes);
-    			System.out.println("SERVER - received image: " + result);
-    			
-    			File output = new File("testing/Result" + i + ".JPG");
-    			ImageIO.write(result, "JPG", output);
-			}
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-	}
-	
+//	public void acceptAndFeed()
+//	{
+//		try (Socket clientSocket = workerSocket.accept();
+//			 ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
+//			 ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream())) 
+//		{
+//			System.out.println("Accepted connection: " + clientSocket.getInetAddress().getCanonicalHostName());
+//			
+//			BufferedImage[] images = new BufferedImage[]
+//			{
+//				ImageIO.read(new File("images/Eiger.JPG")),
+//				//ImageIO.read(new File("images/Apen.JPG"))
+//			};
+//			
+//			for (BufferedImage image : images) 
+//			{
+//    			byte[] imageBytes = toByteArray(image);
+//    			System.out.println("SERVER - bytes: " + imageBytes.length);
+//    			
+//    			out.writeObject(imageBytes);
+//    			System.out.println("SERVER - send image");
+//			}
+//			
+//			for (int i = 0; i < images.length; i++)
+//			{
+//    			byte[] resultBytes = (byte[]) in.readObject();
+//    			System.out.println("SERVER - received bytes: " + resultBytes.length);
+//    			
+//    			BufferedImage result = toBufferedImage(resultBytes);
+//    			System.out.println("SERVER - received image: " + result);
+//    			
+//    			File output = new File("testing/Result" + i + ".JPG");
+//    			ImageIO.write(result, "JPG", output);
+//			}
+//		}
+//		catch (Exception e)
+//		{
+//			e.printStackTrace();
+//		}
+//	}
+//	
 	
 	
 	/**
@@ -123,14 +193,14 @@ public class HeadNode
 	 *
 	 */
 	public static class ClientReceptionThread
-		extends Thread
-		implements AutoCloseable
+		extends CloseableThread
 	{
 		private final ServerSocket socket;
 		private final BlockingQueue<Task> jobQueue;
 		
 		public ClientReceptionThread(int port, BlockingQueue<Task> jobQueue) throws IOException
 		{
+			super("ClientReception");
 			this.socket = new ServerSocket(port);
 			this.jobQueue = jobQueue;
 		}
@@ -138,13 +208,33 @@ public class HeadNode
 		@Override
 		public void run()
 		{
-			throw new UnsupportedOperationException("ReceptionThread.run");
+			System.out.println(getName() + " started");
 			
-				// TODO Accept connection
+			// Accept connection
+			try (Socket clientSocket = socket.accept();
+				 ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
+				 ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream())) 
+			{
+				System.out.println("Accepted client connection: " + clientSocket.getInetAddress().getCanonicalHostName());
 				
-				// TODO Read image
-				
-				// TODO Queue task + connection
+				// Start accepting images
+				while (true)
+				{
+					// Get request
+					Request request = (Request) in.readObject();
+	    			System.out.println("SERVER - received client request: " + request.getImage().length + "b");
+	
+	    			// TODO Image backup
+	    			
+					// Queue task
+	    			Task task = new Task(request.getId(), request.getImage());
+	    			jobQueue.add(task);			
+				}
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace();
+			}
 		}
 
 		@Override
@@ -152,6 +242,7 @@ public class HeadNode
 		{
 			this.socket.close();
 			
+			System.out.println(getName() + " closed.");
 		}
 	}
 	
@@ -163,14 +254,14 @@ public class HeadNode
 	 *
 	 */
 	public static class WorkerReceptionThread
-		extends Thread
-		implements AutoCloseable
+		extends CloseableThread
 	{
 		private final ServerSocket socket;
 		private final ConcurrentHashMap<InetAddress, WorkerHandle> workerPool;
 		
 		public WorkerReceptionThread(int port, ConcurrentHashMap<InetAddress, WorkerHandle> workerPool) throws IOException
 		{
+			super("WorkerReception");
 			this.socket = new ServerSocket(port);
 			this.workerPool = workerPool;
 		}
@@ -179,24 +270,26 @@ public class HeadNode
 		@Override
 		public void run()
 		{
-			//throw new UnsupportedOperationException();
+			System.out.println(getName() + " started");
 			
 			// Loop: accept connections from workers
 			while (true)
 			{
-				try (Socket clientSocket = socket.accept();
-					 ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-					 ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream())) 
+				try
 				{
+					Socket clientSocket = socket.accept(); // The worker handle will close this
+							
 					InetAddress workerAddress = clientSocket.getInetAddress();
 					System.out.println("Accepted worker connection: " + clientSocket.getInetAddress().getCanonicalHostName());
 					
-					// TODO Create handle
+					// Create handle
 					WorkerHandle handle = new WorkerHandle(clientSocket);
 					handle.start();
 					
-					// TODO Add to worker pool
+					// Add to worker pool
 					workerPool.put(workerAddress, handle);
+					
+					System.out.println("Worker added to worker pool.");
 				}
 				catch (Exception e)
 				{
@@ -210,31 +303,63 @@ public class HeadNode
 		public void close() throws Exception 
 		{
 			this.socket.close();
+			
+			System.out.println(getName() + " closed.");
 		}
 	}
 	
 	
 	public static class SchedulerThread
-		extends Thread
+		extends CloseableThread
 	{
 		private final BlockingQueue<Task> jobQueue;
-		// TODO worker pool
+		private final Map<InetAddress, WorkerHandle> workerPool;
 		
 		
-		public SchedulerThread(BlockingQueue<Task> jobQueue/*TODO worker pool*/)
+		public SchedulerThread(BlockingQueue<Task> jobQueue, Map<InetAddress, WorkerHandle> workerPool)
 		{
+			super("Scheduler");
 			this.jobQueue = jobQueue;
+			this.workerPool = workerPool;
 		}
 		
 		
 		@Override
 		public void run()
 		{
-			throw new UnsupportedOperationException("SchedulerThread.run");
+			System.out.println(getName() + " started");
 			
-			// TODO Take job from queue
-			
-			// TODO Send to worker
+			while (true)
+			{
+				try
+				{
+					if ( workerPool.values().size() < 1 )
+					{	// No workers
+						try {
+							sleep(5000);
+						} catch (InterruptedException e) {}
+						continue;
+					}
+					
+					// Take job from queue
+					Task job = jobQueue.take();
+					
+					// TODO Send to worker
+					workerPool.values().toArray(new WorkerHandle[0])[0].sendJob(job);
+				}
+				catch (IOException | InterruptedException e)
+				{
+					e.printStackTrace();
+				}
+			}
+		}
+
+
+		@Override
+		public void close() throws Exception 
+		{
+			// TODO Auto-generated method stub
+			System.out.println(getName() + " closed.");	
 		}
 	}
 	
@@ -244,8 +369,7 @@ public class HeadNode
 	 * @author Chris
 	 */
 	public static class WorkerHandle
-		extends Thread
-		implements AutoCloseable
+		extends CloseableThread
 	{
 		
 		private final Socket workerSocket;
@@ -254,6 +378,7 @@ public class HeadNode
 		
 		public WorkerHandle(Socket workerSocket) throws IOException
 		{
+			super("WorkerHandle");
 			this.workerSocket = workerSocket;
 			this.in = new ObjectInputStream(workerSocket.getInputStream());
 			this.out = new ObjectOutputStream(workerSocket.getOutputStream());
@@ -262,12 +387,38 @@ public class HeadNode
 		@Override
 		public void run()
 		{
-			throw new UnsupportedOperationException("WorkerHandle.run");
+			System.out.println(getName() + " started");
 			
-			// TODO read processed jobs from worker
-			
-			// TODO queue response to client --> asynchronous because clients are unreliable
+			try
+			{
+				while (true)
+				{
+					// TODO read processed jobs from worker
+					byte[] image = (byte[]) in.readObject();
+					System.out.println(getName() + ": received from worker: " + image.length + "b");
+					
+					// TODO queue response to client --> asynchronous because clients are unreliable
+				}
+			}
+			catch (Exception e)
+			{
+				 e.printStackTrace();
+			}
 		}
+		
+		
+		public synchronized void sendJob(Task job) throws IOException
+		{
+			if (job == null)
+				throw new NullPointerException("Job cannot be null");
+			
+			System.out.println("Sending job to " + workerSocket.getInetAddress().getCanonicalHostName());
+			
+			// Send job
+			// TODO Send job with ids
+			out.writeObject(job.getImage());
+		}
+		
 
 		@Override
 		public void close() throws Exception 
@@ -275,6 +426,8 @@ public class HeadNode
 			this.in.close();
 			this.out.close();
 			this.workerSocket.close();
+			
+			System.out.println(getName() + " closed.");
 		}
 	}
 	
@@ -293,13 +446,17 @@ public class HeadNode
 	}
 	
 	
-	public static void beHead()
+	public static void beHead(boolean noChild)
 	{
 		try (HeadNode head = new HeadNode();)
 		{
-			NodeDetails workerDetails = head.startWorker();
-			System.out.println("Leased: " + workerDetails);
-			head.acceptAndFeed();
+			if (!noChild)
+			{
+				NodeDetails workerDetails = head.startWorker();
+				System.out.println("Leased: " + workerDetails);
+			}
+//			head.acceptAndFeed();
+			head.runCommandLine();
 		}
 		catch (IOException e)
 		{
@@ -313,7 +470,10 @@ public class HeadNode
 		switch (args[0])
 		{
 			case "head":
-				HeadNode.beHead();
+				boolean nochild = false;
+				if (args.length > 1)
+					nochild = args[1].equals("nochild");
+				HeadNode.beHead(nochild);
 				break;
 			case "worker":
 				//beWorker(args[1]); //TODO remove hardcoding
