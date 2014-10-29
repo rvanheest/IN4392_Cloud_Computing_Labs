@@ -1,10 +1,13 @@
 package tud.cc;
 
-import java.util.Objects;
+import java.io.Serializable;
 import java.util.UUID;
 
 public class Task 
+	implements Serializable
 {
+	private static final long serialVersionUID = 5186635774216529654L;
+	
 	private final UUID uuid;
 	private final UUID requestUuid;
 	
