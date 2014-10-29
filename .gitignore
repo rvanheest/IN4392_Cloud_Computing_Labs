@@ -1,1 +1,10 @@
 CloudComputing.pem
+
+#generated files by LaTeX
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.pdf
+*.synctex.gz
