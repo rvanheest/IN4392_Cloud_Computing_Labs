@@ -24,6 +24,7 @@ import java.util.logging.SimpleFormatter;
 
 import javax.imageio.ImageIO;
 
+import tud.cc.HeadNode;
 import data.Request;
 import data.Timing;
 
@@ -146,7 +147,7 @@ public class Emulator implements AutoCloseable {
 	private final Logger logger = Logger.getLogger("emulator");
 
 	public Emulator(String head, File dir) throws UnknownHostException, IOException {
-		this.socket = new Socket(InetAddress.getByName(head), 6049);
+		this.socket = new Socket(InetAddress.getByName(head), HeadNode.HeadClientPort);
 		this.out = new ObjectOutputStream(this.socket.getOutputStream());
 		this.in = new ObjectInputStream(this.socket.getInputStream());
 		
