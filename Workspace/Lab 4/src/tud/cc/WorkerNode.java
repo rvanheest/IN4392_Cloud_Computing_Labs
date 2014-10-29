@@ -10,38 +10,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 public class WorkerNode 
-{	
-
-	
-	public void chat(String head)
-	{		
-		System.out.println("Starting worker chat");
-		System.out.println("Reaching to " + head + ":" + HeadNode.HeadServerPort );
-		
-		try (
-			    Socket kkSocket = new Socket(head, HeadNode.HeadServerPort);
-			    PrintWriter out = new PrintWriter(kkSocket.getOutputStream(), true);
-			    BufferedReader in = new BufferedReader(
-			        new InputStreamReader(kkSocket.getInputStream()));
-			)
-		{		
-			System.out.print("Reading: ");
-			String read = in.readLine();
-			System.out.println(read);
-			
-			String write = "No, this is Partick!\n";
-			System.out.print("Writing: " + write);
-			out.write(write);
-			out.flush();
-			
-			System.out.println();
-		}
-		catch (IOException e)
-		{
-		}
-	}
-	
-	
+{		
 	public static void beWorker(String server)
 	{
 //		WorkerNode worker = new WorkerNode();
