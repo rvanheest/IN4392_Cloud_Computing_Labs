@@ -13,39 +13,8 @@ public class WorkerNode
 {	
 
 	
-	public void chat(String head)
-	{		
-		System.out.println("Starting worker chat");
-		System.out.println("Reaching to " + head + ":" + HeadNode.HeadWorkerPort );
-		
-		try (
-			    Socket kkSocket = new Socket(head, HeadNode.HeadWorkerPort);
-			    PrintWriter out = new PrintWriter(kkSocket.getOutputStream(), true);
-			    BufferedReader in = new BufferedReader(
-			        new InputStreamReader(kkSocket.getInputStream()));
-			)
-		{		
-			System.out.print("Reading: ");
-			String read = in.readLine();
-			System.out.println(read);
-			
-			String write = "No, this is Partick!\n";
-			System.out.print("Writing: " + write);
-			out.write(write);
-			out.flush();
-			
-			System.out.println();
-		}
-		catch (IOException e)
-		{
-		}
-	}
-	
-	
 	public static void beWorker(String server)
 	{
-//		WorkerNode worker = new WorkerNode();
-//		worker.chat(server);
 		try (Client client = new Client(server)) {
 			while (true) {
 				Thread.sleep(10000);
