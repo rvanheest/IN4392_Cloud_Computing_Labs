@@ -23,12 +23,14 @@ public class Client implements AutoCloseable {
 		private final BlockingQueue<byte[]> inputQueue;
 
 		public InputThread(ObjectInputStream in, BlockingQueue<byte[]> inputQueue) {
+			super("InputThread");
 			this.in = in;
 			this.inputQueue = inputQueue;
 		}
 
 		@Override
 		public void run() {
+			System.out.println(getName() + " started.");
 			try {
 				while (true) {
 					byte[] imageBytes = (byte[]) this.in.readObject();
@@ -48,12 +50,14 @@ public class Client implements AutoCloseable {
 		private final BlockingQueue<byte[]> outputQueue;
 
 		public OutputThread(ObjectOutputStream out, BlockingQueue<byte[]> outputQueue) {
+			super("OutputThread");
 			this.out = out;
 			this.outputQueue = outputQueue;
 		}
 
 		@Override
 		public void run() {
+			System.out.println(getName() + " started.");
 			try {
 				while (true) {
 					byte[] imageBytes = this.outputQueue.take();
@@ -73,12 +77,14 @@ public class Client implements AutoCloseable {
 		private final BlockingQueue<byte[]> outputQueue;
 
 		public ProcessingThread(BlockingQueue<byte[]> inputQueue, BlockingQueue<byte[]> outputQueue) {
+			super("ProcessingThread");
 			this.inputQueue = inputQueue;
 			this.outputQueue = outputQueue;
 		}
 
 		@Override
 		public void run() {
+			System.out.println(getName() + " started.");
 			try {
 				while (true) {
 					byte[] imageBytes = this.inputQueue.take();
