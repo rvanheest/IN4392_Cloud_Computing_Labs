@@ -1,9 +1,18 @@
 package tud.cc;
 
 import java.awt.image.BufferedImage;
-import java.io.*;
-import java.net.*;
-import java.nio.channels.UnsupportedAddressTypeException;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -13,11 +22,11 @@ import java.util.concurrent.Executors;
 
 import javax.imageio.ImageIO;
 
-import data.Request;
-import emulator.Emulator;
 import amazonTests.Configurations;
 import amazonTests.EC2CloudService;
 import amazonTests.NodeDetails;
+import data.Request;
+import emulator.Emulator;
 
 
 abstract class CloseableThread
@@ -187,6 +196,7 @@ public class HeadNode
 	    			
 					// Queue task
 	    			Task task = new Task(request.getId(), request.getImage());
+	    			task.queued();
 	    			jobQueue.add(task);			
 				}
 			}

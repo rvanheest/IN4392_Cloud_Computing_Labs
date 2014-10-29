@@ -13,7 +13,8 @@ public class Task
 	
 	private long timeQueued;
 	private long timeScheduled;
-	private long timeProcessed;
+	private long timeWorkerReceived;
+	private long timeWorkerProcessed;
 	private long timeServed;
 	
 	private byte[] image;
@@ -25,6 +26,19 @@ public class Task
 		this.requestUuid = requestUuid;
 		
 		this.image = image;
+	}
+
+	public Task(Task t, byte[] newImage) {
+		this.uuid = t.uuid;
+		this.requestUuid = t.requestUuid;
+		
+		this.timeQueued = t.timeQueued;
+		this.timeScheduled = t.timeScheduled;
+		this.timeWorkerProcessed = t.timeWorkerProcessed;
+		this.timeWorkerReceived = t.timeWorkerReceived;
+		this.timeServed = t.timeServed;
+		
+		this.image = newImage;
 	}
 	
 	
@@ -44,8 +58,12 @@ public class Task
 		return timeScheduled;
 	}
 
-	public long getTimeProcessed() {
-		return timeProcessed;
+	public long getTimeWorkerProcessed() {
+		return timeWorkerProcessed;
+	}
+
+	public long getTimeWorkerReceived() {
+		return this.timeWorkerReceived;
 	}
 
 	public long getTimeServed() {
@@ -66,7 +84,10 @@ public class Task
 	}
 	public void processed()
 	{
-		this.timeProcessed = System.currentTimeMillis();
+		this.timeWorkerProcessed = System.currentTimeMillis();
+	}
+	public void received() {
+		this.timeWorkerReceived = System.currentTimeMillis();
 	}
 	public void served()
 	{

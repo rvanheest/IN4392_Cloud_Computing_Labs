@@ -1,6 +1,6 @@
 package tud.cc;
 
-import imageProcessing.Client;
+import imageProcessing.Worker;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -9,7 +9,7 @@ public class WorkerNode
 {		
 	public static void beWorker(String server)
 	{
-		try (Client client = new Client(server)) {
+		try (Worker client = new Worker(server)) {
 			while (true) {
 				Thread.sleep(10000);
 			}
