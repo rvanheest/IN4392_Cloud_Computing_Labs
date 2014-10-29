@@ -2,19 +2,13 @@ package tud.cc;
 
 import imageProcessing.Client;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
 import java.net.UnknownHostException;
 
 public class WorkerNode 
 {		
 	public static void beWorker(String server)
 	{
-//		WorkerNode worker = new WorkerNode();
-//		worker.chat(server);
 		try (Client client = new Client(server)) {
 			while (true) {
 				Thread.sleep(10000);
