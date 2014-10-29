@@ -8,3 +8,6 @@ CloudComputing.pem
 *.out
 *.pdf
 *.synctex.gz
+
+*.log
+*.log.lck
