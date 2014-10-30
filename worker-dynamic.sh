@@ -7,7 +7,7 @@ LOG="init.log"
 EXECUTABLE="uninode.jar"
 HEAD="ip-172-31-10-31.eu-west-1.compute.internal"
 
-cd cd /home/ubuntu/worker-workspace/
+cd /home/ubuntu/worker-workspace/
 
 # Let everyone know you ran
 echo $0 : starting >> $LOG
