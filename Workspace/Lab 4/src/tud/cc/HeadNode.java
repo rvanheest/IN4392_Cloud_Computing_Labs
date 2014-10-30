@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
@@ -24,6 +25,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 
+import scheduler.RoundRobinScheduler;
+import scheduler.Scheduler;
+import scheduler.SchedulerException;
 import amazonTests.Configurations;
 import amazonTests.EC2CloudService;
 import amazonTests.NodeDetails;
@@ -431,6 +435,8 @@ public class HeadNode
 	public static class SchedulerThread
 		extends CloseableThread
 	{
+		private final Scheduler scheduler = new RoundRobinScheduler();
+		
 		private final BlockingQueue<Task> jobQueue;
 		private final Map<InetAddress, WorkerHandle> workerPool;
 		
@@ -461,12 +467,24 @@ public class HeadNode
 					}
 					
 					// Take job from queue
-					Task job = jobQueue.take();
+					ArrayList<Task> tasks = new ArrayList<>();
+					tasks.add(jobQueue.take());
+					Task nextTask = null;
+					while ((nextTask = jobQueue.poll()) != null)
+						tasks.add(nextTask);
 					
-					// TODO Send to worker
-					workerPool.values().toArray(new WorkerHandle[0])[0].sendJob(job);
+					// Schedule
+					Map<Task, WorkerHandle> mapping = scheduler.schedule(tasks, workerPool.values());
+					
+					// Send to worker
+					for (Entry<Task, WorkerHandle> entry : mapping.entrySet())
+					{
+						Task task = entry.getKey();
+						WorkerHandle handle = entry.getValue();
+						handle.sendJob(task);
+					}
 				}
-				catch (IOException | InterruptedException e)
+				catch (InterruptedException | SchedulerException | IOException e)
 				{
 					e.printStackTrace();
 				}
