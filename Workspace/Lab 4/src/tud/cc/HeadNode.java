@@ -21,6 +21,7 @@ import amazonTests.Configurations;
 import amazonTests.EC2CloudService;
 import amazonTests.NodeDetails;
 import data.Request;
+import data.Task;
 import emulator.Emulator;
 
 

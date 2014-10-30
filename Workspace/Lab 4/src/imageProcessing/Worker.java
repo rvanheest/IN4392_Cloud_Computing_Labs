@@ -11,8 +11,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import data.Task;
 import tud.cc.HeadNode;
-import tud.cc.Task;
 import tud.cc.Utils;
 
 public class Worker implements AutoCloseable {
