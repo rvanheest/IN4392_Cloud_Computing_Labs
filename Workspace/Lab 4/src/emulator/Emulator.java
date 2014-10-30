@@ -237,15 +237,15 @@ public class Emulator implements AutoCloseable {
 			boolean isRunning = true;
 			while (isRunning) {
 				System.out.print("> ");
-				String command = consoleInput.readLine();
+				String command = consoleInput.readLine().trim();
 				switch (command) {
 					case "send":
 						try {
     						System.out.println("How many images do you want to send?");
-    						int num = Integer.parseInt(consoleInput.readLine());
+    						int num = Integer.parseInt(consoleInput.readLine().trim());
     						
     						System.out.println("How long should the interval be between sending two images (in milliseconds)?");
-    						int timeToSleep = Integer.parseInt(consoleInput.readLine());
+    						int timeToSleep = Integer.parseInt(consoleInput.readLine().trim());
     						
     						new RandomOutputThread(this.directory, this.out, this.sendTimes, num, timeToSleep).start();
 						}
@@ -256,7 +256,7 @@ public class Emulator implements AutoCloseable {
 					case "send-all":
 						try {
     						System.out.println("How long should the interval be between sending two images (in milliseconds)?");
-    						int sleepTime = Integer.parseInt(consoleInput.readLine());
+    						int sleepTime = Integer.parseInt(consoleInput.readLine().trim());
     						
     						new AllOutputThread(this.directory, this.out, this.sendTimes, sleepTime).start();
 						}
