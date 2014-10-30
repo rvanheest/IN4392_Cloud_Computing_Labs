@@ -7,6 +7,7 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -131,8 +132,7 @@ public class Worker implements AutoCloseable {
 
 	private final InputThread input;
 	private final OutputThread output;
-	private final ProcessingThread process1;
-	private final ProcessingThread process2;
+	private final ArrayList<ProcessingThread> processes = new ArrayList<ProcessingThread>();
 
 	public Worker(String head) throws UnknownHostException, IOException {
 		this.socket = new Socket(InetAddress.getByName(head), HeadNode.HeadWorkerPort);
@@ -141,8 +141,10 @@ public class Worker implements AutoCloseable {
 
 		this.input = new InputThread(in, inputQueue);
 		this.output = new OutputThread(out, outputQueue);
-		this.process1 = new ProcessingThread(inputQueue, outputQueue);
-		this.process2 = new ProcessingThread(inputQueue, outputQueue);
+		
+		// Start one processing thread for each processor
+		for ( int i=0 ; i<Runtime.getRuntime().availableProcessors() ; i++)
+			processes.add(new ProcessingThread(inputQueue, outputQueue));
 		
 		this.startProcessing();
 	}
@@ -152,8 +154,8 @@ public class Worker implements AutoCloseable {
 
 		input.start();
 		output.start();
-		process1.start();
-		process2.start();
+		for (ProcessingThread process : processes)
+			process.start();
 
 		System.out.println("All processing threads started.");
 	}
@@ -162,8 +164,8 @@ public class Worker implements AutoCloseable {
 	public void close() throws IOException {
 		this.input.interrupt();
 		this.output.interrupt();
-		this.process1.interrupt();
-		this.process2.interrupt();
+		for (ProcessingThread process : processes)
+			process.interrupt();
 
 		this.in.close();
 		this.out.close();
