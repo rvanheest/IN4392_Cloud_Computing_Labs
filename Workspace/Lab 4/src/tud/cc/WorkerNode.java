@@ -1,6 +1,6 @@
 package tud.cc;
 
-import imageProcessing.Worker;
+import imageProcessing.worker.Worker;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
