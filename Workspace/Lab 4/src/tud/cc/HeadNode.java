@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -25,9 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 
-import scheduler.RoundRobinScheduler;
-import scheduler.Scheduler;
-import scheduler.SchedulerException;
+import scheduler.*;
 import amazonTests.Configurations;
 import amazonTests.EC2CloudService;
 import amazonTests.NodeDetails;
@@ -46,7 +45,7 @@ abstract class CloseableThread
 	
 	public CloseableThread(String name)
 	{
-		super(name);
+		super("[T-" + name + "]");
 	}
 }
 
@@ -435,7 +434,7 @@ public class HeadNode
 	public static class SchedulerThread
 		extends CloseableThread
 	{
-		private final Scheduler scheduler = new RoundRobinScheduler();
+		private final Scheduler scheduler = new RandomScheduler(new Random());
 		
 		private final BlockingQueue<Task> jobQueue;
 		private final Map<InetAddress, WorkerHandle> workerPool;
