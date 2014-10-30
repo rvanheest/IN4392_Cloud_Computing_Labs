@@ -1,5 +1,6 @@
 package scheduler;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,5 +15,5 @@ import data.Task;
  */
 public interface Scheduler {
 
-	Map<Task, WorkerHandle> schedule(List<Task> tasks, Set<WorkerHandle> workers) throws SchedulerException;
+	Map<Task, WorkerHandle> schedule(List<Task> tasks, Collection<WorkerHandle> workers) throws SchedulerException;
 }

@@ -1,5 +1,6 @@
 package scheduler;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -18,7 +19,7 @@ import data.Task;
 public class RoundRobinScheduler implements Scheduler {
 
 	@Override
-	public Map<Task, WorkerHandle> schedule(List<Task> tasks, Set<WorkerHandle> workers) throws SchedulerException {
+	public Map<Task, WorkerHandle> schedule(List<Task> tasks, Collection<WorkerHandle> workers) throws SchedulerException {
 		Map<Task, WorkerHandle> result = new HashMap<>();
 		
 		if (workers.isEmpty()) {
