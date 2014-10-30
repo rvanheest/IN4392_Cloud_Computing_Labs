@@ -280,6 +280,12 @@ public class Emulator implements AutoCloseable {
 		}
 	}
 
-	// connect to the head via socket
-	// send a path every second
+	public static void beEmulator(String arg1, File arg2) {
+		try (Emulator emu = new Emulator(arg1, arg2)) {
+			emu.runCommandLine();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 }

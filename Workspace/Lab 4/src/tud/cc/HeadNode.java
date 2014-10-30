@@ -663,7 +663,7 @@ public class HeadNode
 				WorkerNode.beWorker(args[1]);
 				break;
 			case "emulator":
-				Emulator emu = new Emulator(args[1], new File(args[2]));
+				Emulator.beEmulator(args[1], new File(args[2]));
 				break;
 			default:
 				System.err.println("Unknown role: " + args[0]);
