@@ -15,6 +15,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -57,6 +58,7 @@ public class HeadNode
 //	private final ServerSocket clientSocket;
 	private final BlockingQueue<Task> jobQueue = new java.util.concurrent.LinkedBlockingDeque<Task>();
 	private final BlockingQueue<Task> processed = new java.util.concurrent.LinkedBlockingDeque<Task>();
+	private final ConcurrentHashMap<InetAddress, ClientHandle> clients = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<InetAddress, WorkerHandle> workerPool = new ConcurrentHashMap<>();
 	
 	private ArrayList<CloseableThread> threads = new ArrayList<>();
@@ -67,7 +69,7 @@ public class HeadNode
 		System.out.println("Initialising head node...");
 		
 		// TODO Start all the threads
-		threads.add(new HeadNode.WorkerReceptionThread(HeadWorkerPort, workerPool));
+		threads.add(new HeadNode.WorkerReceptionThread(HeadWorkerPort, workerPool, processed));
 		threads.add(new HeadNode.ClientReceptionThread(HeadClientPort, jobQueue));
 		threads.add(new HeadNode.SchedulerThread(jobQueue, workerPool));
 		// TODO response thread
@@ -217,6 +219,75 @@ public class HeadNode
 	
 	
 	/**
+	 * Handles input from one client
+	 * @author Chris
+	 */
+	public static class ClientHandle
+		extends CloseableThread
+	{
+		
+		private final Socket clientSocket;
+		private final ObjectInputStream in;
+		private final ObjectOutputStream out;
+		private final Queue<Task> processedQueue;
+		
+		public ClientHandle(Socket workerSocket, Queue<Task> processedQueue) throws IOException
+		{
+			super("WorkerHandle");
+			this.clientSocket = workerSocket;
+			this.in = new ObjectInputStream(workerSocket.getInputStream());
+			this.out = new ObjectOutputStream(workerSocket.getOutputStream());
+			this.processedQueue = processedQueue;
+		}
+		
+		@Override
+		public void run()
+		{
+			System.out.println(getName() + " started");
+			
+			try
+			{
+				while (true)
+				{
+					// TODO read processed jobs from worker
+					Task job = (Task) in.readObject();
+					System.out.println(getName() + ": received from worker: " + job.getImage().length + "b");
+					
+					// TODO queue response to client --> asynchronous because clients are unreliable
+				}
+			}
+			catch (Exception e)
+			{
+				 e.printStackTrace();
+			}
+		}
+		
+		
+		public synchronized void sendJob(Task job) throws IOException
+		{
+			if (job == null)
+				throw new NullPointerException("Job cannot be null");
+			
+			System.out.println("Sending job to " + clientSocket.getInetAddress().getCanonicalHostName());
+			
+			// Send job
+			out.writeObject(job);
+		}
+		
+
+		@Override
+		public void close() throws Exception 
+		{
+			this.in.close();
+			this.out.close();
+			this.clientSocket.close();
+			
+			System.out.println(getName() + " closed.");
+		}
+	}
+	
+	
+	/**
 	 * Accepts connections from new workers
 	 * 
 	 * @author Chris
@@ -227,12 +298,14 @@ public class HeadNode
 	{
 		private final ServerSocket socket;
 		private final ConcurrentHashMap<InetAddress, WorkerHandle> workerPool;
+		private final Queue<Task> processed;
 		
-		public WorkerReceptionThread(int port, ConcurrentHashMap<InetAddress, WorkerHandle> workerPool) throws IOException
+		public WorkerReceptionThread(int port, ConcurrentHashMap<InetAddress, WorkerHandle> workerPool, Queue<Task> processed) throws IOException
 		{
 			super("WorkerReception");
 			this.socket = new ServerSocket(port);
 			this.workerPool = workerPool;
+			this.processed = processed;
 		}
 		
 		
@@ -252,7 +325,7 @@ public class HeadNode
 					System.out.println("Accepted worker connection: " + clientSocket.getInetAddress().getCanonicalHostName());
 					
 					// Create handle
-					WorkerHandle handle = new WorkerHandle(clientSocket);
+					WorkerHandle handle = new WorkerHandle(clientSocket, processed);
 					handle.start();
 					
 					// Add to worker pool
@@ -344,13 +417,15 @@ public class HeadNode
 		private final Socket workerSocket;
 		private final ObjectInputStream in;
 		private final ObjectOutputStream out;
+		private final Queue<Task> processedQueue;
 		
-		public WorkerHandle(Socket workerSocket) throws IOException
+		public WorkerHandle(Socket workerSocket, Queue<Task> processedQueue) throws IOException
 		{
 			super("WorkerHandle");
 			this.workerSocket = workerSocket;
 			this.in = new ObjectInputStream(workerSocket.getInputStream());
 			this.out = new ObjectOutputStream(workerSocket.getOutputStream());
+			this.processedQueue = processedQueue;
 		}
 		
 		@Override
@@ -363,8 +438,8 @@ public class HeadNode
 				while (true)
 				{
 					// TODO read processed jobs from worker
-					byte[] image = (byte[]) in.readObject();
-					System.out.println(getName() + ": received from worker: " + image.length + "b");
+					Task job = (Task) in.readObject();
+					System.out.println(getName() + ": received from worker: " + job.getImage().length + "b");
 					
 					// TODO queue response to client --> asynchronous because clients are unreliable
 				}
@@ -384,7 +459,6 @@ public class HeadNode
 			System.out.println("Sending job to " + workerSocket.getInetAddress().getCanonicalHostName());
 			
 			// Send job
-			// TODO Send job with ids
 			out.writeObject(job);
 		}
 		
