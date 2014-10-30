@@ -1,9 +1,6 @@
 package tud.cc;
 
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -19,8 +16,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import javax.imageio.ImageIO;
 
 import amazonTests.Configurations;
 import amazonTests.EC2CloudService;
@@ -399,21 +394,6 @@ public class HeadNode
 			System.out.println(getName() + " closed.");
 		}
 	}
-	
-	
-	public static byte[] toByteArray(BufferedImage image) throws IOException {
-		try (ByteArrayOutputStream outbytes = new ByteArrayOutputStream()) {
-			ImageIO.write(image, "JPG", outbytes);
-			return outbytes.toByteArray();
-		}
-	}
-
-	public static BufferedImage toBufferedImage(byte[] bytes) throws IOException {
-		try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
-			return ImageIO.read(bais);
-		}
-	}
-	
 	
 	public static void beHead(boolean noChild)
 	{
