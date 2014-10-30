@@ -11,12 +11,18 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
 
 import amazonTests.Configurations;
 import amazonTests.EC2CloudService;
@@ -41,7 +47,63 @@ abstract class CloseableThread
 }
 
 
-class 
+
+class Connection
+	implements AutoCloseable
+{
+	public final Socket socket;
+	public final ObjectOutputStream out;
+	public final ObjectInputStream in;
+	
+	public Connection(Socket socket) throws IOException
+	{
+		this.socket = socket;
+		this.in = new ObjectInputStream(socket.getInputStream());
+		this.out = new ObjectOutputStream(socket.getOutputStream());
+	}
+
+	@Override
+	public void close() throws Exception 
+	{
+		this.in.close();
+		this.out.close();
+		this.socket.close();
+	}
+	
+	public void send(Object o) throws IOException
+	{
+		synchronized (out)
+		{
+			out.writeObject(o);
+		}
+	}
+	
+	public <T> T receive() throws ClassNotFoundException, IOException
+	{
+		synchronized (in)
+		{
+			T readObject = (T) this.in.readObject();
+			return readObject;
+		}
+	}
+	
+	@Override
+	public int hashCode() 
+	{
+		return Objects.hash(socket, out, in);
+	}
+	
+	@Override
+	public boolean equals(Object obj) 
+	{
+		if (obj instanceof Connection)
+		{
+			Connection other = (Connection) obj;
+			return this.socket.equals(other.socket);
+		}
+		return false;
+	}
+}
 
 
 
@@ -57,10 +119,10 @@ public class HeadNode
 //	private final ServerSocket clientSocket;
 	private final BlockingQueue<Task> jobQueue = new java.util.concurrent.LinkedBlockingDeque<Task>();
 	private final BlockingQueue<Task> processed = new java.util.concurrent.LinkedBlockingDeque<Task>();
-	private final ConcurrentHashMap<InetAddress, ClientHandle> clients = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<InetAddress, WorkerHandle> workerPool = new ConcurrentHashMap<>();
+	private final Map<UUID, ClientHandle> requestMap = new ConcurrentHashMap<>();
 	
-	private ArrayList<CloseableThread> threads = new ArrayList<>();
+	private Deque<CloseableThread> threads = new LinkedBlockingDeque<>();
 	
 	
 	public HeadNode() throws IOException
@@ -68,11 +130,12 @@ public class HeadNode
 		System.out.println("Initialising head node...");
 		
 		// TODO Start all the threads
-		threads.add(new HeadNode.WorkerReceptionThread(HeadWorkerPort, workerPool, processed));
-		threads.add(new HeadNode.ClientReceptionThread(HeadClientPort, jobQueue));
+		threads.add(new HeadNode.WorkerReceptionThread(HeadWorkerPort, workerPool, processed, threads));
+		threads.add(new HeadNode.ClientReceptionThread(HeadClientPort, jobQueue, threads, requestMap));
 		threads.add(new HeadNode.SchedulerThread(jobQueue, workerPool));
-		// TODO response thread
+		threads.add(new HeadNode.Responder(processed, requestMap));
 		// TODO monitor thread
+		
 		for (Thread t : threads)
 			t.start();
 	}
@@ -118,6 +181,10 @@ public class HeadNode
 						break;
 					case "queue":
 						for (Task job : jobQueue)
+							System.out.println(job);
+						break;
+					case "processed":
+						for (Task job : processed)
 							System.out.println(job);
 						break;
 					case "ping":
@@ -166,12 +233,16 @@ public class HeadNode
 	{
 		private final ServerSocket socket;
 		private final BlockingQueue<Task> jobQueue;
+		private final Deque<CloseableThread> threads;
+		private final Map<UUID, ClientHandle> requestMap;
 		
-		public ClientReceptionThread(int port, BlockingQueue<Task> jobQueue) throws IOException
+		public ClientReceptionThread(int port, BlockingQueue<Task> jobQueue, Deque<CloseableThread> threads, Map<UUID, ClientHandle> requestMap) throws IOException
 		{
 			super("ClientReception");
 			this.socket = new ServerSocket(port);
 			this.jobQueue = jobQueue;
+			this.threads = threads;
+			this.requestMap = requestMap;
 		}
 		
 		@Override
@@ -179,31 +250,23 @@ public class HeadNode
 		{
 			System.out.println(getName() + " started");
 			
-			// Accept connection
-			try (Socket clientSocket = socket.accept();
-				 ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-				 ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream())) 
+			while (true)
 			{
-				System.out.println("Accepted client connection: " + clientSocket.getInetAddress().getCanonicalHostName());
-				
-				// Start accepting images
-				while (true)
+				// Accept connection
+				try 
 				{
-					// Get request
-					Request request = (Request) in.readObject();
-	    			System.out.println(getName() + " received request " + request.getImage().length + "b");
-	
-	    			// TODO Image backup
-	    			
-					// Queue task
-	    			Task task = new Task(request.getId(), request.getImage());
-	    			task.queued();
-	    			jobQueue.add(task);			
+					Connection connection = new Connection(socket.accept());
+					
+					System.out.println("Accepted client connection: " + connection.socket.getInetAddress().getCanonicalHostName());
+					
+					ClientHandle handle = new ClientHandle(connection, jobQueue, requestMap);
+					threads.add(handle);
+					handle.start();
 				}
-			}
-			catch (Exception e)
-			{
-				e.printStackTrace();
+				catch (Exception e)
+				{
+					e.printStackTrace();
+				}
 			}
 		}
 
@@ -225,18 +288,17 @@ public class HeadNode
 		extends CloseableThread
 	{
 		
-		private final Socket clientSocket;
-		private final ObjectInputStream in;
-		private final ObjectOutputStream out;
-		private final Queue<Task> processedQueue;
+		private final Connection connection;
+		private final Queue<Task> jobQueue;
+		private final Map<UUID, ClientHandle> requestMap;
 		
-		public ClientHandle(Socket workerSocket, Queue<Task> processedQueue) throws IOException
+		
+		public ClientHandle(Connection connection, Queue<Task> jobQueue, Map<UUID, ClientHandle> requestMap) throws IOException
 		{
-			super("WorkerHandle");
-			this.clientSocket = workerSocket;
-			this.in = new ObjectInputStream(workerSocket.getInputStream());
-			this.out = new ObjectOutputStream(workerSocket.getOutputStream());
-			this.processedQueue = processedQueue;
+			super("ClientHandle");
+			this.connection = connection;
+			this.jobQueue = jobQueue;
+			this.requestMap = requestMap;
 		}
 		
 		@Override
@@ -246,13 +308,21 @@ public class HeadNode
 			
 			try
 			{
+				// Start accepting images
 				while (true)
 				{
-					// TODO read processed jobs from worker
-					Task job = (Task) in.readObject();
-					System.out.println(getName() + ": received from worker: " + job.getImage().length + "b");
-					
-					// TODO queue response to client --> asynchronous because clients are unreliable
+					// Get request
+					Request request = connection.receive();
+	    			System.out.println(getName() + " received request " + request.getImage().length + "b");
+	
+	    			// TODO Image backup
+	    			
+					// Queue task
+	    			Task task = new Task(request.getId(), request.getImage());
+	    			requestMap.put(request.getId(), this);
+	    			
+	    			jobQueue.add(task);
+	    			task.queued();	    			
 				}
 			}
 			catch (Exception e)
@@ -262,24 +332,29 @@ public class HeadNode
 		}
 		
 		
-		public synchronized void sendJob(Task job) throws IOException
+		/**
+		 * Sends response to the client.
+		 * Blocks on the calling thread.
+		 * 
+		 * @param response The response object
+		 * @throws IOException
+		 */
+		public synchronized void sendResponse(Request response) throws IOException
 		{
-			if (job == null)
-				throw new NullPointerException("Job cannot be null");
+			if (response == null)
+				throw new NullPointerException("Response cannot be null");
 			
-			System.out.println("Sending job to " + clientSocket.getInetAddress().getCanonicalHostName());
+			System.out.println(getName() + " sending response to " + connection.socket.getInetAddress().getCanonicalHostName());
+			requestMap.remove(response.getId());
 			
-			// Send job
-			out.writeObject(job);
+			this.connection.send(response);
 		}
 		
 
 		@Override
 		public void close() throws Exception 
 		{
-			this.in.close();
-			this.out.close();
-			this.clientSocket.close();
+			this.connection.close();
 			
 			System.out.println(getName() + " closed.");
 		}
@@ -298,13 +373,15 @@ public class HeadNode
 		private final ServerSocket socket;
 		private final ConcurrentHashMap<InetAddress, WorkerHandle> workerPool;
 		private final Queue<Task> processed;
+		private final Deque<CloseableThread> threads;
 		
-		public WorkerReceptionThread(int port, ConcurrentHashMap<InetAddress, WorkerHandle> workerPool, Queue<Task> processed) throws IOException
+		public WorkerReceptionThread(int port, ConcurrentHashMap<InetAddress, WorkerHandle> workerPool, Queue<Task> processed, Deque<CloseableThread> threads) throws IOException
 		{
 			super("WorkerReception");
 			this.socket = new ServerSocket(port);
 			this.workerPool = workerPool;
 			this.processed = processed;
+			this.threads = threads;
 		}
 		
 		
@@ -325,6 +402,7 @@ public class HeadNode
 					
 					// Create handle
 					WorkerHandle handle = new WorkerHandle(clientSocket, processed);
+					threads.add(handle);
 					handle.start();
 					
 					// Add to worker pool
@@ -473,6 +551,61 @@ public class HeadNode
 			System.out.println(getName() + " closed.");
 		}
 	}
+	
+	
+	public static class Responder
+		extends CloseableThread
+	{
+		private final BlockingQueue<Task> processed;
+		private final Map<UUID, ClientHandle> requestMap;
+		
+		
+		public Responder(BlockingQueue<Task> processed, Map<UUID, ClientHandle> requestMap)
+		{
+			super("Responder");
+			this.processed = processed;
+			this.requestMap = requestMap;
+		}
+		
+
+		@Override
+		public void run() 
+		{
+			try 
+			{
+				while (true)
+				{
+					try
+					{
+						Task task = processed.take();
+						
+						UUID requestUuid = task.getRequestUuid();
+						Request response = new Request(requestUuid, task.getImage());
+						
+						ClientHandle handle = requestMap.get(requestUuid);
+						handle.sendResponse(response);
+					}
+					catch (IOException e) 
+					{
+						e.printStackTrace();
+					}
+				}
+			} 
+			catch (InterruptedException e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		
+		@Override
+		public void close() throws Exception 
+		{
+		}
+		
+	}
+	
 	
 	public static void beHead(boolean noChild)
 	{
