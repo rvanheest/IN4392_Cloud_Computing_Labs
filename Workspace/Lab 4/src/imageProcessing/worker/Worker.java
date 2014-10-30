@@ -58,7 +58,7 @@ public class Worker implements AutoCloseable {
 	public void close() throws IOException {
 		this.input.interrupt();
 		this.output.interrupt();
-		
+
 		for (ProcessingThread process : processes) {
 			process.interrupt();
 		}

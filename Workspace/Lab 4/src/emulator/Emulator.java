@@ -29,13 +29,13 @@ public class Emulator implements AutoCloseable {
 	private final Socket socket;
 	private final ObjectOutputStream out;
 	private final ObjectInputStream in;
-	
+
 	private final ConcurrentMap<UUID, Long> sendTimes = new ConcurrentHashMap<>();
 	private final BlockingQueue<Timing> completionTimes = new LinkedBlockingQueue<Timing>();
-	
+
 	private final InputThread input;
 	private final LoggingThread logging;
-	
+
 	private final File directory;
 	private final Logger logger = Logger.getLogger("emulator");
 
@@ -43,12 +43,12 @@ public class Emulator implements AutoCloseable {
 		this.socket = new Socket(InetAddress.getByName(head), HeadNode.HeadClientPort);
 		this.out = new ObjectOutputStream(this.socket.getOutputStream());
 		this.in = new ObjectInputStream(this.socket.getInputStream());
-		
+
 		this.input = new InputThread(this.in, this.sendTimes, this.completionTimes);
 		this.logging = new LoggingThread(this.completionTimes, this.logger);
-		
+
 		this.directory = dir;
-		
+
 		this.initLogger();
 		this.startProcessing();
 	}
@@ -58,12 +58,12 @@ public class Emulator implements AutoCloseable {
 			Handler consoleHandler = new ConsoleHandler();
 			Handler fileHandler = new FileHandler("emulator-log.log");
 			Formatter simpleFormatter = new SimpleFormatter();
-			
+
 			consoleHandler.setFormatter(simpleFormatter);
 			fileHandler.setFormatter(simpleFormatter);
 			this.logger.addHandler(consoleHandler);
 			this.logger.addHandler(fileHandler);
-			
+
 		}
 		catch (SecurityException | IOException e) {
 			e.printStackTrace();
@@ -92,13 +92,15 @@ public class Emulator implements AutoCloseable {
 				switch (command) {
 					case "send":
 						try {
-    						System.out.println("How many images do you want to send?");
-    						int num = Integer.parseInt(consoleInput.readLine().trim());
-    						
-    						System.out.println("How long should the interval be between sending two images (in milliseconds)?");
-    						int timeToSleep = Integer.parseInt(consoleInput.readLine().trim());
-    						
-    						new RandomOutputThread(this.directory, this.out, this.sendTimes, num, timeToSleep).start();
+							System.out.println("How many images do you want to send?");
+							int num = Integer.parseInt(consoleInput.readLine().trim());
+
+							System.out.println("How long should the interval be between sending "
+									+ "two images (in milliseconds)?");
+							int timeToSleep = Integer.parseInt(consoleInput.readLine().trim());
+
+							new RandomOutputThread(this.directory, this.out, this.sendTimes,
+									num, timeToSleep).start();
 						}
 						catch (NumberFormatException e) {
 							System.err.println("a number was not formatted correctly");
@@ -106,10 +108,12 @@ public class Emulator implements AutoCloseable {
 						break;
 					case "send-all":
 						try {
-    						System.out.println("How long should the interval be between sending two images (in milliseconds)?");
-    						int sleepTime = Integer.parseInt(consoleInput.readLine().trim());
-    						
-    						new AllOutputThread(this.directory, this.out, this.sendTimes, sleepTime).start();
+							System.out.println("How long should the interval be between sending "
+									+ "two images (in milliseconds)?");
+							int sleepTime = Integer.parseInt(consoleInput.readLine().trim());
+
+							new AllOutputThread(this.directory, this.out, this.sendTimes, sleepTime)
+									.start();
 						}
 						catch (NumberFormatException e) {
 							System.err.println("a number was not formatted correctly");
@@ -121,7 +125,8 @@ public class Emulator implements AutoCloseable {
 					case "break":
 						isRunning = false;
 						break;
-					default: System.out.println("Unknown command " + command);
+					default:
+						System.out.println("Unknown command " + command);
 				}
 			}
 			System.out.println("Emulator command-line ended");

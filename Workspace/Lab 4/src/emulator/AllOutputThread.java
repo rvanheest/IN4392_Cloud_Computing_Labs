@@ -12,7 +12,7 @@ import tud.cc.Utils;
 import data.Request;
 
 class AllOutputThread extends Thread {
-	
+
 	private final File imageDirectory;
 	private final ObjectOutputStream out;
 	private final ConcurrentMap<UUID, Long> sendTimes;
@@ -25,23 +25,23 @@ class AllOutputThread extends Thread {
 		this.sendTimes = sendTimes;
 		this.timeToSleep = timeToSleep;
 	}
-	
+
 	@Override
 	public void run() {
 		try {
 			for (File file : this.imageDirectory.listFiles()) {
 				BufferedImage image = ImageIO.read(file);
-				
+
 				byte[] bytesToBeSend = Utils.toByteArray(image);
 				UUID uuid = UUID.randomUUID();
 				Request request = new Request(uuid, bytesToBeSend);
-				
+
 				System.out.println("EMULATOR_OUTPUT - sending image: " + request);
 				this.out.writeObject(request);
-				
+
 				long t1 = System.currentTimeMillis();
 				this.sendTimes.put(uuid, t1);
-				
+
 				sleep(this.timeToSleep);
 			}
 		}
