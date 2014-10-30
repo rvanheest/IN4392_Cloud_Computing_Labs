@@ -190,6 +190,11 @@ public class HeadNode
 						for (Task job : processed)
 							System.out.println(job);
 						break;
+					case "lease":
+						System.out.println("Leasing a new worker...");
+						NodeDetails workerDetails = startWorker();
+						System.out.println("Leased: " + workerDetails);
+						break;
 					case "ping":
 						System.out.println("pong");
 						break;
@@ -628,11 +633,11 @@ public class HeadNode
 	{
 		try (HeadNode head = new HeadNode();)
 		{
-			if (!noChild)
-			{
-				NodeDetails workerDetails = head.startWorker();
-				System.out.println("Leased: " + workerDetails);
-			}
+//			if (!noChild)
+//			{
+//				NodeDetails workerDetails = head.startWorker();
+//				System.out.println("Leased: " + workerDetails);
+//			}
 //			head.acceptAndFeed();
 			head.runCommandLine();
 		}
