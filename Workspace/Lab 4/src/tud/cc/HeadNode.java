@@ -117,13 +117,18 @@ public class HeadNode
 	public static final int HeadWorkerPort = 6048;
 	public static final int HeadClientPort = 6049;	
 	
+	private static final ExecutorService service = Executors.newFixedThreadPool(8);
+	private static final EC2CloudService cloudService = new EC2CloudService("AwsCredentials.properties", "CC", "ec2.eu-west-1.amazonaws.com", service);
+	
 
 //	private final ServerSocket workerSocket;
 //	private final ServerSocket clientSocket;
 	private final BlockingQueue<Task> jobQueue = new java.util.concurrent.LinkedBlockingDeque<Task>();
 	private final BlockingQueue<Task> processed = new java.util.concurrent.LinkedBlockingDeque<Task>();
-	private final ConcurrentHashMap<InetAddress, WorkerHandle> workerPool = new ConcurrentHashMap<>();
-	private final Map<UUID, ClientHandle> requestMap = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, WorkerHandle> workerPool = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, NodeDetails> workerDetails = new ConcurrentHashMap<>();
+	private final Map<UUID, ClientHandle> requestMap = new ConcurrentHashMap<>();	
+	
 	
 	private Deque<CloseableThread> threads = new LinkedBlockingDeque<>();
 	
@@ -132,8 +137,8 @@ public class HeadNode
 	{
 		System.out.println("Initialising head node...");
 		
-		// TODO Start all the threads
-		threads.add(new HeadNode.WorkerReceptionThread(HeadWorkerPort, workerPool, processed, threads));
+		// Start all the threads
+		threads.add(new HeadNode.WorkerReceptionThread(HeadWorkerPort, workerPool, processed, threads, workerDetails));
 		threads.add(new HeadNode.ClientReceptionThread(HeadClientPort, jobQueue, threads, requestMap));
 		threads.add(new HeadNode.SchedulerThread(jobQueue, workerPool));
 		threads.add(new HeadNode.Responder(processed, requestMap));
@@ -175,12 +180,14 @@ public class HeadNode
 			while (isCl)
 			{
 				System.out.print("> ");
-				String command = in.readLine().trim();
+				String[] tokens = in.readLine().split("\\s");
+				String command = tokens[0];
 				switch (command)
 				{
 					case "workers":
-						for (InetAddress inet : workerPool.keySet())
-							System.out.println(inet.getCanonicalHostName());
+						// TODO
+						for (String inet : workerPool.keySet())
+							System.out.println(inet);
 						break;
 					case "queue":
 						for (Task job : jobQueue)
@@ -194,6 +201,10 @@ public class HeadNode
 						System.out.println("Leasing a new worker...");
 						NodeDetails workerDetails = startWorker();
 						System.out.println("Leased: " + workerDetails);
+						break;
+					case "release":
+						WorkerHandle handle = workerPool.get(tokens[1]);
+						handle.close();
 						break;
 					case "ping":
 						System.out.println("pong");
@@ -218,12 +229,11 @@ public class HeadNode
 	 */
 	public NodeDetails startWorker()
 	{
-		System.out.println("Leasing new worker...");
-		
 		ExecutorService service = Executors.newFixedThreadPool(8);
 		EC2CloudService cloudService = new EC2CloudService("AwsCredentials.properties", "CC", "ec2.eu-west-1.amazonaws.com", service);
 		
 		NodeDetails details = cloudService.leaseNode(new Configurations("random", null));
+		this.workerDetails.put(details.getNodeAddress().getCanonicalHostName(), details);
 		
 		return details;
 	}
@@ -330,7 +340,7 @@ public class HeadNode
 	    			requestMap.put(request.getId(), this);
 	    			
 	    			jobQueue.add(task);
-	    			task.queued();	    			
+	    			task.queued();	
 				}
 			}
 			catch (Exception e)
@@ -379,17 +389,24 @@ public class HeadNode
 		extends CloseableThread
 	{
 		private final ServerSocket socket;
-		private final ConcurrentHashMap<InetAddress, WorkerHandle> workerPool;
+		private final ConcurrentHashMap<String, WorkerHandle> workerPool;
 		private final Queue<Task> processed;
 		private final Deque<CloseableThread> threads;
+		private final Map<String, NodeDetails> workerDetails;
 		
-		public WorkerReceptionThread(int port, ConcurrentHashMap<InetAddress, WorkerHandle> workerPool, Queue<Task> processed, Deque<CloseableThread> threads) throws IOException
+		public WorkerReceptionThread(
+				int port,
+				ConcurrentHashMap<String, WorkerHandle> workerPool,
+				Queue<Task> processed, Deque<CloseableThread> threads,
+				Map<String, NodeDetails> workerDetails
+				) throws IOException
 		{
 			super("WorkerReception");
 			this.socket = new ServerSocket(port);
 			this.workerPool = workerPool;
 			this.processed = processed;
 			this.threads = threads;
+			this.workerDetails = workerDetails;
 		}
 		
 		
@@ -409,12 +426,13 @@ public class HeadNode
 					System.out.println("Accepted worker connection: " + clientSocket.getInetAddress().getCanonicalHostName());
 					
 					// Create handle
-					WorkerHandle handle = new WorkerHandle(clientSocket, processed);
+					NodeDetails nodeDetails = workerDetails.get(clientSocket.getInetAddress().getCanonicalHostName());
+					WorkerHandle handle = new WorkerHandle(nodeDetails, clientSocket, processed, workerPool);
 					threads.add(handle);
 					handle.start();
 					
 					// Add to worker pool
-					workerPool.put(workerAddress, handle);
+					workerPool.put(workerAddress.getCanonicalHostName(), handle);
 					
 					System.out.println("Worker added to worker pool.");
 				}
@@ -442,10 +460,10 @@ public class HeadNode
 		private final Scheduler scheduler = new RandomScheduler(new Random());
 		
 		private final BlockingQueue<Task> jobQueue;
-		private final Map<InetAddress, WorkerHandle> workerPool;
+		private final Map<String, WorkerHandle> workerPool;
 		
 		
-		public SchedulerThread(BlockingQueue<Task> jobQueue, Map<InetAddress, WorkerHandle> workerPool)
+		public SchedulerThread(BlockingQueue<Task> jobQueue, Map<String, WorkerHandle> workerPool)
 		{
 			super("Scheduler");
 			this.jobQueue = jobQueue;
@@ -512,19 +530,26 @@ public class HeadNode
 	public static class WorkerHandle
 		extends CloseableThread
 	{
-		
+		private final NodeDetails nodeDetails;
 		private final Socket workerSocket;
 		private final ObjectInputStream in;
 		private final ObjectOutputStream out;
 		private final Queue<Task> processedQueue;
+		private final Map<String, WorkerHandle> workerPool;
 		
-		public WorkerHandle(Socket workerSocket, Queue<Task> processedQueue) throws IOException
+		public WorkerHandle(NodeDetails nodeDetails, Socket workerSocket, Queue<Task> processedQueue, Map<String, WorkerHandle> workerPool) throws IOException
 		{
 			super("WorkerHandle");
+			
+			if (nodeDetails == null)
+				throw new NullPointerException(getName() + " requires the NodeDetails");
+			
+			this.nodeDetails = nodeDetails;
 			this.workerSocket = workerSocket;
 			this.in = new ObjectInputStream(workerSocket.getInputStream());
 			this.out = new ObjectOutputStream(workerSocket.getOutputStream());
 			this.processedQueue = processedQueue;
+			this.workerPool = workerPool;
 		}
 		
 		@Override
@@ -562,13 +587,24 @@ public class HeadNode
 			out.writeObject(job);
 		}
 		
+		
+		public void release() 
+		{
+			System.out.println("Releasing node " + nodeDetails.getNodeAddress().getCanonicalHostName());
+			cloudService.releaseNode(nodeDetails);
+		}
+		
 
 		@Override
 		public void close() throws Exception 
 		{
+			workerPool.remove(this.nodeDetails.getNodeAddress().getCanonicalHostName());
+			
 			this.in.close();
 			this.out.close();
 			this.workerSocket.close();
+			
+			release();
 			
 			System.out.println(getName() + " closed.");
 		}
