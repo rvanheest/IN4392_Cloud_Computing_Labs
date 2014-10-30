@@ -1,9 +1,10 @@
 package emulator;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
@@ -25,6 +26,7 @@ import java.util.logging.SimpleFormatter;
 import javax.imageio.ImageIO;
 
 import tud.cc.HeadNode;
+import tud.cc.Utils;
 import data.Request;
 import data.Timing;
 
@@ -61,29 +63,34 @@ public class Emulator implements AutoCloseable {
 		}
 	}
 
-	private static class OutputThread extends Thread {
+	private static class RandomOutputThread extends Thread {
 		
 		private final File imageDirectory;
 		private final ObjectOutputStream out;
 		private final ConcurrentMap<UUID, Long> sendTimes;
 		private final Random random = new Random();
+		private int num;
+		private long timeToSleep;
 
-		public OutputThread(File imageDirectory, ObjectOutputStream out, ConcurrentMap<UUID, Long> sendTimes) {
+		public RandomOutputThread(File imageDirectory, ObjectOutputStream out,
+				ConcurrentMap<UUID, Long> sendTimes, int num, long timeToSleep) {
 			this.imageDirectory = imageDirectory;
 			this.out = out;
 			this.sendTimes = sendTimes;
+			this.num = num;
+			this.timeToSleep = timeToSleep;
 		}
 		
 		@Override
 		public void run() {
 			try {
-				while (true) {
+				while (this.num > 0) {
 					File[] images = this.imageDirectory.listFiles();
 					int index = this.random.nextInt(images.length); // bound: [0, images.length)
 					File imageToBeSend = images[index];
 					BufferedImage image = ImageIO.read(imageToBeSend);
 					
-					byte[] bytesToBeSend = toByteArray(image);
+					byte[] bytesToBeSend = Utils.toByteArray(image);
 					UUID uuid = UUID.randomUUID();
 					Request request = new Request(uuid, bytesToBeSend);
 					
@@ -93,18 +100,53 @@ public class Emulator implements AutoCloseable {
 					long t1 = System.currentTimeMillis();
 					this.sendTimes.put(uuid, t1);
 					
-					sleep(10000);
+					this.num--;
+					
+					sleep(this.timeToSleep);
 				}
 			}
 			catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
+	}
 
-		private static byte[] toByteArray(BufferedImage image) throws IOException {
-			try (ByteArrayOutputStream outbytes = new ByteArrayOutputStream()) {
-				ImageIO.write(image, "JPG", outbytes);
-				return outbytes.toByteArray();
+	private static class AllOutputThread extends Thread {
+		
+		private final File imageDirectory;
+		private final ObjectOutputStream out;
+		private final ConcurrentMap<UUID, Long> sendTimes;
+		private long timeToSleep;
+
+		public AllOutputThread(File imageDirectory, ObjectOutputStream out,
+				ConcurrentMap<UUID, Long> sendTimes, long timeToSleep) {
+			this.imageDirectory = imageDirectory;
+			this.out = out;
+			this.sendTimes = sendTimes;
+			this.timeToSleep = timeToSleep;
+		}
+		
+		@Override
+		public void run() {
+			try {
+				for (File file : this.imageDirectory.listFiles()) {
+					BufferedImage image = ImageIO.read(file);
+					
+					byte[] bytesToBeSend = Utils.toByteArray(image);
+					UUID uuid = UUID.randomUUID();
+					Request request = new Request(uuid, bytesToBeSend);
+					
+					System.out.println("EMULATOR_OUTPUT - sending image: " + request);
+					this.out.writeObject(request);
+					
+					long t1 = System.currentTimeMillis();
+					this.sendTimes.put(uuid, t1);
+					
+					sleep(this.timeToSleep);
+				}
+			}
+			catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 	}
@@ -141,9 +183,9 @@ public class Emulator implements AutoCloseable {
 	private final BlockingQueue<Timing> completionTimes = new LinkedBlockingQueue<Timing>();
 	
 	private final InputThread input;
-	private final OutputThread output;
 	private final LoggingThread logging;
 	
+	private final File directory;
 	private final Logger logger = Logger.getLogger("emulator");
 
 	public Emulator(String head, File dir) throws UnknownHostException, IOException {
@@ -152,8 +194,9 @@ public class Emulator implements AutoCloseable {
 		this.in = new ObjectInputStream(this.socket.getInputStream());
 		
 		this.input = new InputThread(this.in, this.sendTimes, this.completionTimes);
-		this.output = new OutputThread(dir, this.out, this.sendTimes);
 		this.logging = new LoggingThread(this.completionTimes, this.logger);
+		
+		this.directory = dir;
 		
 		this.initLogger();
 		this.startProcessing();
@@ -178,7 +221,6 @@ public class Emulator implements AutoCloseable {
 
 	private void startProcessing() {
 		this.input.start();
-		this.output.start();
 		this.logging.start();
 	}
 
@@ -187,6 +229,55 @@ public class Emulator implements AutoCloseable {
 		this.in.close();
 		this.out.close();
 		this.socket.close();
+	}
+
+	public void runCommandLine() {
+		try (BufferedReader consoleInput = new BufferedReader(new InputStreamReader(System.in))) {
+			System.out.println("Emulator command-line started");
+			boolean isRunning = true;
+			while (isRunning) {
+				System.out.print("> ");
+				String command = consoleInput.readLine();
+				switch (command) {
+					case "send":
+						try {
+    						System.out.println("How many images do you want to send?");
+    						int num = Integer.parseInt(consoleInput.readLine());
+    						
+    						System.out.println("How long should the interval be between sending two images (in milliseconds)?");
+    						int timeToSleep = Integer.parseInt(consoleInput.readLine());
+    						
+    						new RandomOutputThread(this.directory, this.out, this.sendTimes, num, timeToSleep).start();
+						}
+						catch (NumberFormatException e) {
+							System.err.println("a number was not formatted correctly");
+						}
+						break;
+					case "send-all":
+						try {
+    						System.out.println("How long should the interval be between sending two images (in milliseconds)?");
+    						int sleepTime = Integer.parseInt(consoleInput.readLine());
+    						
+    						new AllOutputThread(this.directory, this.out, this.sendTimes, sleepTime).start();
+						}
+						catch (NumberFormatException e) {
+							System.err.println("a number was not formatted correctly");
+						}
+						break;
+					case "ping":
+						System.out.println("pong");
+						break;
+					case "break":
+						isRunning = false;
+						break;
+					default: System.out.println("Unknown command " + command);
+				}
+			}
+			System.out.println("Emulator command-line ended");
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	// connect to the head via socket
