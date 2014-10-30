@@ -117,9 +117,17 @@ public class HeadNode
 	public static final int HeadWorkerPort = 6048;
 	public static final int HeadClientPort = 6049;	
 	
-	private static final ExecutorService service = Executors.newFixedThreadPool(8);
-	private static final EC2CloudService cloudService = new EC2CloudService("AwsCredentials.properties", "CC", "ec2.eu-west-1.amazonaws.com", service);
-	
+	private static ExecutorService _service = null;
+	private static EC2CloudService _cloudService = null;
+	private static EC2CloudService getService()
+	{
+		if (_cloudService == null)
+		{
+			 _service = Executors.newFixedThreadPool(8);
+			 _cloudService = new EC2CloudService("AwsCredentials.properties", "CC", "ec2.eu-west-1.amazonaws.com", _service);
+		}
+		return _cloudService;
+	}
 
 //	private final ServerSocket workerSocket;
 //	private final ServerSocket clientSocket;
@@ -179,42 +187,52 @@ public class HeadNode
 			boolean isCl = true; 
 			while (isCl)
 			{
-				System.out.print("> ");
-				String[] tokens = in.readLine().split("\\s");
-				String command = tokens[0];
-				switch (command)
+				try
 				{
-					case "workers":
-						// TODO
-						for (String inet : workerPool.keySet())
-							System.out.println(inet);
-						break;
-					case "queue":
-						for (Task job : jobQueue)
-							System.out.println(job);
-						break;
-					case "processed":
-						for (Task job : processed)
-							System.out.println(job);
-						break;
-					case "lease":
-						System.out.println("Leasing a new worker...");
-						NodeDetails workerDetails = startWorker();
-						System.out.println("Leased: " + workerDetails);
-						break;
-					case "release":
-						WorkerHandle handle = workerPool.get(tokens[1]);
-						handle.close();
-						break;
-					case "ping":
-						System.out.println("pong");
-						break;
-					case "break":
-						isCl = false;
-						break;
-					default:
-						System.out.println("Unknown command " + command);
-						break;
+					System.out.print("> ");
+					String[] tokens = in.readLine().split("\\s");
+					String command = tokens[0];
+					switch (command)
+					{
+						case "workers":
+							for (String inet : workerPool.keySet())
+								System.out.println(inet);
+							break;
+						case "worker-details":
+							for (String details : workerDetails.keySet())
+								System.out.println(details);
+							break;
+						case "queue":
+							for (Task job : jobQueue)
+								System.out.println(job);
+							break;
+						case "processed":
+							for (Task job : processed)
+								System.out.println(job);
+							break;
+						case "lease":
+							System.out.println("Leasing a new worker...");
+							NodeDetails workerDetails = startWorker();
+							System.out.println("Leased: " + workerDetails);
+							break;
+						case "release":
+							WorkerHandle handle = workerPool.get(tokens[1]);
+							handle.close();
+							break;
+						case "ping":
+							System.out.println("pong");
+							break;
+						case "break":
+							isCl = false;
+							break;
+						default:
+							System.out.println("Unknown command " + command);
+							break;
+					}
+				}
+				catch (Exception e)
+				{
+					e.printStackTrace();
 				}
 			}
 			System.out.println("Command-line ended");
@@ -228,12 +246,9 @@ public class HeadNode
 	 * @return The details of the node just deployed
 	 */
 	public NodeDetails startWorker()
-	{
-		ExecutorService service = Executors.newFixedThreadPool(8);
-		EC2CloudService cloudService = new EC2CloudService("AwsCredentials.properties", "CC", "ec2.eu-west-1.amazonaws.com", service);
-		
-		NodeDetails details = cloudService.leaseNode(new Configurations("random", null));
-		this.workerDetails.put(details.getNodeAddress().getCanonicalHostName(), details);
+	{		
+		NodeDetails details = getService().leaseNode(new Configurations("random", null));
+		this.workerDetails.put(details.getNodePrivateIP().getHostAddress(), details);
 		
 		return details;
 	}
@@ -275,7 +290,7 @@ public class HeadNode
 				{
 					Connection connection = new Connection(socket.accept());
 					
-					System.out.println("Accepted client connection: " + connection.socket.getInetAddress().getCanonicalHostName());
+					System.out.println("Accepted client connection: " + connection.socket.getInetAddress().getHostAddress());
 					
 					ClientHandle handle = new ClientHandle(connection, jobQueue, requestMap);
 					threads.add(handle);
@@ -362,7 +377,7 @@ public class HeadNode
 			if (response == null)
 				throw new NullPointerException("Response cannot be null");
 			
-			System.out.println(getName() + " sending response to " + connection.socket.getInetAddress().getCanonicalHostName());
+			System.out.println(getName() + " sending response to " + connection.socket.getInetAddress().getHostAddress());
 			requestMap.remove(response.getId());
 			
 			this.connection.send(response);
@@ -423,16 +438,17 @@ public class HeadNode
 					Socket clientSocket = socket.accept(); // The worker handle will close this
 							
 					InetAddress workerAddress = clientSocket.getInetAddress();
-					System.out.println("Accepted worker connection: " + clientSocket.getInetAddress().getCanonicalHostName());
+					System.out.println("Accepted worker connection: " + clientSocket.getInetAddress().getHostAddress());
 					
 					// Create handle
-					NodeDetails nodeDetails = workerDetails.get(clientSocket.getInetAddress().getCanonicalHostName());
+					NodeDetails nodeDetails = workerDetails.get(clientSocket.getInetAddress().getHostAddress());
 					WorkerHandle handle = new WorkerHandle(nodeDetails, clientSocket, processed, workerPool);
 					threads.add(handle);
 					handle.start();
 					
 					// Add to worker pool
-					workerPool.put(workerAddress.getCanonicalHostName(), handle);
+					workerPool.put(workerAddress.getHostAddress(), handle);
+					workerDetails.remove(clientSocket.getInetAddress().getHostAddress());
 					
 					System.out.println("Worker added to worker pool.");
 				}
@@ -537,6 +553,8 @@ public class HeadNode
 		private final Queue<Task> processedQueue;
 		private final Map<String, WorkerHandle> workerPool;
 		
+		private boolean closing = false;
+		
 		public WorkerHandle(NodeDetails nodeDetails, Socket workerSocket, Queue<Task> processedQueue, Map<String, WorkerHandle> workerPool) throws IOException
 		{
 			super("WorkerHandle");
@@ -571,7 +589,8 @@ public class HeadNode
 			}
 			catch (Exception e)
 			{
-				 e.printStackTrace();
+				if (!closing)
+					e.printStackTrace();
 			}
 		}
 		
@@ -581,7 +600,7 @@ public class HeadNode
 			if (job == null)
 				throw new NullPointerException("Job cannot be null");
 			
-			System.out.println("Sending job to " + workerSocket.getInetAddress().getCanonicalHostName());
+			System.out.println("Sending job to " + workerSocket.getInetAddress().getHostAddress());
 			
 			// Send job
 			out.writeObject(job);
@@ -590,15 +609,18 @@ public class HeadNode
 		
 		public void release() 
 		{
-			System.out.println("Releasing node " + nodeDetails.getNodeAddress().getCanonicalHostName());
-			cloudService.releaseNode(nodeDetails);
+			System.out.println("Releasing node " + nodeDetails.getNodeAddress().getHostAddress());
+			getService().releaseNode(nodeDetails);
 		}
 		
 
 		@Override
 		public void close() throws Exception 
 		{
-			workerPool.remove(this.nodeDetails.getNodeAddress().getCanonicalHostName());
+			this.closing = true;
+			this.interrupt();
+			
+			workerPool.remove(this.nodeDetails.getNodePrivateIP().getHostAddress());
 			
 			this.in.close();
 			this.out.close();
