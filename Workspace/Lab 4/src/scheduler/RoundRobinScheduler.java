@@ -18,10 +18,13 @@ import data.Task;
 public class RoundRobinScheduler implements Scheduler {
 
 	@Override
-	public Map<Task, WorkerHandle> schedule(List<Task> tasks, Set<WorkerHandle> workers) {
+	public Map<Task, WorkerHandle> schedule(List<Task> tasks, Set<WorkerHandle> workers) throws SchedulerException {
 		Map<Task, WorkerHandle> result = new HashMap<>();
 		
-		if (!workers.isEmpty()) {
+		if (workers.isEmpty()) {
+			throw new SchedulerException("The set of WorkerHandles was empty");
+		}
+		else {
 			Iterator<WorkerHandle> iterator = workers.iterator();
     		for (Task t : tasks) {
     			if (iterator.hasNext()) {

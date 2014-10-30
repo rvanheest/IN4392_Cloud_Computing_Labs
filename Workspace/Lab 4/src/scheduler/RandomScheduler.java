@@ -9,6 +9,10 @@ import java.util.Set;
 import tud.cc.HeadNode.WorkerHandle;
 import data.Task;
 
+/**
+ * This implementation of {@code Scheduler} assigns each task to a randomly chosen worker.
+ * @author Richard
+ */
 public class RandomScheduler implements Scheduler {
 
 	private final Random randomizer;
@@ -18,10 +22,13 @@ public class RandomScheduler implements Scheduler {
 	}
 
 	@Override
-	public Map<Task, WorkerHandle> schedule(List<Task> tasks, Set<WorkerHandle> workers) {
+	public Map<Task, WorkerHandle> schedule(List<Task> tasks, Set<WorkerHandle> workers) throws SchedulerException {
 		Map<Task, WorkerHandle> result = new HashMap<>();
 
-		if (!workers.isEmpty()) {
+		if (workers.isEmpty()) {
+			throw new SchedulerException("The set of WorkerHandles was empty");
+		}
+		else {
 			WorkerHandle[] array = workers.toArray(new WorkerHandle[0]);
 			int size = workers.size();
 			for (Task t : tasks) {

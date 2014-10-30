@@ -11,14 +11,13 @@ import data.Task;
 
 /**
  * This implementation of {@code Scheduler} assigns all tasks to the first {@code WorkerHandle}
- * in {@code workers}. If {@code workers} is empty, the scheduler returns an empty
- * {@code Map<Task, WorkerHandle>}.
+ * in {@code workers}.
  * @author Richard van Heest
  */
 public class AllOnFirstScheduler implements Scheduler {
 
 	@Override
-	public Map<Task, WorkerHandle> schedule(List<Task> tasks, Set<WorkerHandle> workers) {
+	public Map<Task, WorkerHandle> schedule(List<Task> tasks, Set<WorkerHandle> workers) throws SchedulerException {
 		Map<Task, WorkerHandle> result = new HashMap<>();
 		
 		Iterator<WorkerHandle> iterator = workers.iterator();
@@ -27,6 +26,10 @@ public class AllOnFirstScheduler implements Scheduler {
 			for (Task t : tasks) {
 				result.put(t, worker);
 			}
+		}
+		else {
+			assert workers.isEmpty() : "The workers set should be empty, but contained: " + workers.toString();
+			throw new SchedulerException("The set of WorkerHandles was empty");
 		}
 		
 		return result;
