@@ -442,6 +442,8 @@ public class HeadNode
 					
 					// Create handle
 					NodeDetails nodeDetails = workerDetails.get(clientSocket.getInetAddress().getHostAddress());
+					if (nodeDetails == null)
+						throw new Exception("Unknown host tried to connect on worker port");
 					WorkerHandle handle = new WorkerHandle(nodeDetails, clientSocket, processed, workerPool);
 					threads.add(handle);
 					handle.start();
