@@ -46,11 +46,29 @@ public class EC2CreateInstanceWorker implements Callable<NodeDetails> {
 		Instance instance = instances.get(0);
 
 		String ipAddress = this.getInstancePublicIpAddress(instance.getInstanceId());
+		String privateIP = instance.getPrivateIpAddress();
 		return new NodeDetails(instance.getInstanceId(), instance.getInstanceType(),
-				InetAddress.getByName(ipAddress), 22, 443, 5456, 6060, 1, null);
+				InetAddress.getByName(ipAddress), InetAddress.getByName(privateIP), 22, 443, 5456, 6060, 1, null);
 	}
 
 	private String getInstancePublicIpAddress(String instanceId) {
+		String ipaddress = null;
+		while (ipaddress == null) {
+			DescribeInstancesResult describeInstancesRequest = this.amazonEC2Client
+					.describeInstances();
+			List<Reservation> reservations = describeInstancesRequest.getReservations();
+			for (Reservation reservation : reservations) {
+				for (Instance instance : reservation.getInstances()) {
+					if (instance.getInstanceId().equals(instanceId)) {
+						ipaddress = instance.getPublicIpAddress();
+					}
+				}
+			}
+		}
+		return ipaddress;
+	}
+	
+	private String getInstancePrivateIpAddress(String instanceId) {
 		String ipaddress = null;
 		while (ipaddress == null) {
 			DescribeInstancesResult describeInstancesRequest = this.amazonEC2Client

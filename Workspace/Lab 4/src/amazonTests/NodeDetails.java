@@ -14,6 +14,7 @@ public final class NodeDetails implements Serializable {
 	private final String nodeID;
 	private final String nodeType;
 	private final InetAddress nodeIP;
+	private final InetAddress privateIP;
 	private final Integer sshPort;
 	private final Integer httpsPort;
 	private final Integer hornetQPort;
@@ -21,12 +22,14 @@ public final class NodeDetails implements Serializable {
 	private final int processors;
 	private final OperatingSystem operatingSystem;
 
-	public NodeDetails(String nodeID, String nodeType, InetAddress nodeIP, Integer sshPort,
+	public NodeDetails(String nodeID, String nodeType, InetAddress nodeIP, 
+			InetAddress privateIP, Integer sshPort,
 			Integer httpsPort, Integer hornetQPort, Integer jmxPort, int processors,
 			OperatingSystem operatingSytem) {
 		this.nodeID = nodeID;
 		this.nodeType = nodeType;
 		this.nodeIP = nodeIP;
+		this.privateIP = privateIP;
 		this.sshPort = sshPort;
 		this.httpsPort = httpsPort;
 		this.hornetQPort = hornetQPort;
@@ -45,6 +48,10 @@ public final class NodeDetails implements Serializable {
 
 	public InetAddress getNodeAddress() {
 		return this.nodeIP;
+	}
+	
+	public InetAddress getNodePrivateIP() {
+		return this.privateIP;
 	}
 
 	public Integer getSSHPort() {
