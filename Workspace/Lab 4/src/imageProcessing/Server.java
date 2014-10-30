@@ -12,6 +12,7 @@ import java.net.Socket;
 
 import javax.imageio.ImageIO;
 
+@Deprecated
 public class Server {
 
 	public static void main(String[] args) {

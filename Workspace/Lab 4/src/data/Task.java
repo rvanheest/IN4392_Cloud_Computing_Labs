@@ -1,4 +1,4 @@
-package tud.cc;
+package data;
 
 import java.io.Serializable;
 import java.util.UUID;

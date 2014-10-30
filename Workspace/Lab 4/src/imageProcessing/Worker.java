@@ -1,8 +1,6 @@
 package imageProcessing;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -13,10 +11,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import javax.imageio.ImageIO;
-
+import data.Task;
 import tud.cc.HeadNode;
-import tud.cc.Task;
+import tud.cc.Utils;
 
 public class Worker implements AutoCloseable {
 
@@ -95,7 +92,7 @@ public class Worker implements AutoCloseable {
 					Task inTask = this.inputQueue.take();
 					byte[] imageBytes = inTask.getImage();
 					System.out.println("CLIENT_PROC - start: " + imageBytes.length);
-					BufferedImage image = toBufferedImage(imageBytes);
+					BufferedImage image = Utils.toBufferedImage(imageBytes);
 
 					Callable<BufferedImage> gray = new GrayScaling(image);
 					Callable<BufferedImage> noise = new Noise(image, 10, 200);
@@ -115,25 +112,12 @@ public class Worker implements AutoCloseable {
 					BufferedImage res = c6.call(); // executing all the filters recursively
 					System.out.println("CLIENT_PROC - finished: " + imageBytes.length);
 
-					byte[] resBytes = toByteArray(res);
+					byte[] resBytes = Utils.toByteArray(res);
 					this.outputQueue.put(new Task(inTask, resBytes));
 				}
 			}
 			catch (Exception e) {
 				e.printStackTrace();
-			}
-		}
-
-		private static byte[] toByteArray(BufferedImage image) throws IOException {
-			try (ByteArrayOutputStream outbytes = new ByteArrayOutputStream()) {
-				ImageIO.write(image, "JPG", outbytes);
-				return outbytes.toByteArray();
-			}
-		}
-
-		private static BufferedImage toBufferedImage(byte[] bytes) throws IOException {
-			try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
-				return ImageIO.read(bais);
 			}
 		}
 	}
