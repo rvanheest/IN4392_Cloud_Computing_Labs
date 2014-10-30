@@ -41,6 +41,9 @@ abstract class CloseableThread
 }
 
 
+class 
+
+
 
 public class HeadNode 
 	implements AutoCloseable
@@ -433,11 +436,12 @@ public class HeadNode
 			{
 				while (true)
 				{
-					// TODO read processed jobs from worker
+					// Read processed jobs from worker
 					Task job = (Task) in.readObject();
 					System.out.println(getName() + ": received from worker: " + job.getImage().length + "b");
 					
-					// TODO queue response to client --> asynchronous because clients are unreliable
+					// Queue response to client
+					processedQueue.add(job);
 				}
 			}
 			catch (Exception e)
