@@ -11,11 +11,12 @@ public class Task
 	private final UUID uuid;
 	private final UUID requestUuid;
 	
-	private long timeQueued;
-	private long timeScheduled;
-	private long timeWorkerReceived;
-	private long timeWorkerProcessed;
-	private long timeServed;
+	private long timeQueued = -1;
+	private long timeScheduled = -1;
+	private long timeWorkerReceived = -1;
+	private long timeWorkerProcessed = -1;
+	private long timeProcessed = -1;
+	private long timeServed = -1;
 	
 	private byte[] image;
 	
@@ -65,6 +66,10 @@ public class Task
 	public long getTimeWorkerReceived() {
 		return this.timeWorkerReceived;
 	}
+	
+	public long getTimeProcessed() {
+		return this.timeProcessed;
+	}
 
 	public long getTimeServed() {
 		return timeServed;
@@ -82,17 +87,70 @@ public class Task
 	{
 		this.timeScheduled = System.currentTimeMillis();
 	}
-	public void processed()
+	public void workerReceived() 
+	{
+		this.timeWorkerReceived = System.currentTimeMillis();
+	}
+	public void workerProcessed()
 	{
 		this.timeWorkerProcessed = System.currentTimeMillis();
 	}
-	public void received() {
-		this.timeWorkerReceived = System.currentTimeMillis();
+	public void processed()
+	{
+		this.timeProcessed = System.currentTimeMillis();
 	}
 	public void served()
 	{
 		this.timeServed = System.currentTimeMillis();
 	}
+	
+	
+	/**
+	 * The cumulative span of the processing steps
+	 * @return
+	 */
+	public long[] cumulativeStepsInHead()
+	{
+		long[] steps =  new long[] 
+		{ 
+			this.timeQueued - this.timeQueued,
+			this.timeScheduled - this.timeQueued,
+			this.timeProcessed - this.timeQueued,
+			this.timeServed - this.timeQueued,
+		};
+		for (int i=0 ; i<steps.length ; i++)
+			if (steps[i] < 0)
+				steps[i] = -1;
+		return steps;
+	}
+	
+	/**
+	 * The span of the processing steps
+	 * @return
+	 */
+	public long[] stepsInHead()
+	{
+		long[] steps =  new long[] 
+		{ 
+			this.timeScheduled - this.timeQueued,
+			this.timeProcessed - this.timeScheduled,
+			this.timeServed - this.timeProcessed,
+		};
+		for (int i=0 ; i<steps.length ; i++)
+			if (steps[i] < 0)
+				steps[i] = -1;
+		return steps;
+	}
+	
+	/**
+	 * Get the time that this image spent being processed
+	 * @return
+	 */
+	public long getWorkerProcessingTime()
+	{
+		return this.timeWorkerProcessed - this.timeWorkerReceived;
+	}
+	
 	
 	@Override
 	public String toString() {
