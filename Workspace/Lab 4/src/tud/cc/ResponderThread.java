@@ -11,6 +11,8 @@ import data.Task;
 public class ResponderThread
 	extends CloseableThread
 {
+	private boolean closing = false;
+	
 	private final BlockingQueue<Task> processed;
 	private final Map<UUID, ClientHandle> requestMap;
 	
@@ -48,8 +50,8 @@ public class ResponderThread
 		} 
 		catch (InterruptedException e)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			if (!this.closing)
+				e.printStackTrace();
 		}
 	}
 	
@@ -57,6 +59,10 @@ public class ResponderThread
 	@Override
 	public void close() throws Exception 
 	{
+		this.closing = true;
+		this.interrupt();
+		
+		System.out.println(getName() + " closed.");
 	}
 	
 }

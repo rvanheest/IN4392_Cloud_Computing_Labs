@@ -15,6 +15,8 @@ import data.Task;
 public class SchedulerThread
 	extends CloseableThread
 {
+	private boolean closing;
+	
 	private final Scheduler scheduler = new RandomScheduler(new Random());
 	
 	private final BlockingQueue<Task> jobQueue;
@@ -64,7 +66,12 @@ public class SchedulerThread
 					handle.sendJob(task);
 				}
 			}
-			catch (InterruptedException | SchedulerException | IOException e)
+			catch (InterruptedException e)
+			{
+				if (!this.closing)
+					e.printStackTrace();
+			}
+			catch (SchedulerException | IOException e)
 			{
 				e.printStackTrace();
 			}
@@ -75,6 +82,9 @@ public class SchedulerThread
 	@Override
 	public void close() throws Exception 
 	{
+		this.closing = false;
+		this.interrupt();
+		
 		// TODO Auto-generated method stub
 		System.out.println(getName() + " closed.");	
 	}

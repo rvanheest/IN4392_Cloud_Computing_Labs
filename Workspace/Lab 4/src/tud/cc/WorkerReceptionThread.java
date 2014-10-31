@@ -21,6 +21,8 @@ import data.Task;
 public class WorkerReceptionThread
 	extends CloseableThread
 {
+	private boolean closing = false;
+	
 	private final ServerSocket socket;
 	private final ConcurrentHashMap<String, WorkerHandle> workerPool;
 	private final Queue<Task> processed;
@@ -74,7 +76,8 @@ public class WorkerReceptionThread
 			}
 			catch (Exception e)
 			{
-				e.printStackTrace();
+				if (!this.closing)
+					e.printStackTrace();
 			}
 		}
 	}
@@ -83,6 +86,9 @@ public class WorkerReceptionThread
 	@Override
 	public void close() throws Exception 
 	{
+		this.closing = true;
+		this.interrupt();
+		
 		this.socket.close();
 		
 		System.out.println(getName() + " closed.");

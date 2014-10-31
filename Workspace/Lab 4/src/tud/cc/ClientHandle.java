@@ -16,6 +16,7 @@ import data.Task;
 public class ClientHandle
 	extends CloseableThread
 {
+	private boolean closing = false;
 	
 	private final Connection connection;
 	private final Queue<Task> jobQueue;
@@ -56,7 +57,8 @@ public class ClientHandle
 		}
 		catch (Exception e)
 		{
-			 e.printStackTrace();
+			if (!closing)
+				e.printStackTrace();
 		}
 	}
 	
@@ -83,6 +85,9 @@ public class ClientHandle
 	@Override
 	public void close() throws Exception 
 	{
+		this.closing = true;
+		this.interrupt();
+		
 		this.connection.close();
 		
 		System.out.println(getName() + " closed.");

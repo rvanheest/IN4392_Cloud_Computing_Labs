@@ -19,6 +19,8 @@ import data.Task;
 public class ClientReceptionThread
 	extends CloseableThread
 {
+	private boolean closing = false;
+	
 	private final ServerSocket socket;
 	private final BlockingQueue<Task> jobQueue;
 	private final Deque<CloseableThread> threads;
@@ -53,6 +55,8 @@ public class ClientReceptionThread
 			}
 			catch (Exception e)
 			{
+				if (this.closing)
+					break;
 				e.printStackTrace();
 			}
 		}
@@ -61,6 +65,9 @@ public class ClientReceptionThread
 	@Override
 	public void close() throws Exception
 	{
+		this.closing = true;
+		this.interrupt();
+		
 		this.socket.close();
 		
 		System.out.println(getName() + " closed.");

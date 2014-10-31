@@ -18,6 +18,8 @@ import data.Task;
 public class WorkerHandle
 	extends CloseableThread
 {
+	private boolean closing = false;
+	
 	private final NodeDetails nodeDetails;
 	private final Socket workerSocket;
 	private final ObjectInputStream in;
@@ -25,7 +27,6 @@ public class WorkerHandle
 	private final Queue<Task> processedQueue;
 	private final Map<String, WorkerHandle> workerPool;
 	
-	private boolean closing = false;
 	
 	public WorkerHandle(NodeDetails nodeDetails, Socket workerSocket, Queue<Task> processedQueue, Map<String, WorkerHandle> workerPool) throws IOException
 	{
