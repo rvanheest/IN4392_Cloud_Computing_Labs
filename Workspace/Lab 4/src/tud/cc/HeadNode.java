@@ -138,9 +138,10 @@ public class HeadNode
 	
 	/**
 	 * AutoCloseable implementation
+	 * @throws InterruptedException 
 	 */
 	@Override
-	public void close() throws IOException
+	public void close() throws IOException, InterruptedException
 	{
 		// Close every thread
 		for (CloseableThread t : threads)
@@ -150,6 +151,11 @@ public class HeadNode
 				t.close();
 			} catch (Exception e) {	}
 		}
+		
+		// Join threads
+		System.out.println("Waiting for terminating threads...");
+		for (Thread t : threads)
+				t.join();
 		
 		System.out.println("Head node closed");
 	}
@@ -205,6 +211,12 @@ public class HeadNode
 						case "exit":
 							isCl = false;
 							break;
+						case "threads":
+							Thread[] allThreads = new Thread[Thread.activeCount()];
+			                Thread.enumerate(allThreads);
+			                for (Thread thread : allThreads)
+			                	System.out.println(thread);
+							break;
 						default:
 							System.out.println("Unknown command " + command);
 							break;
@@ -247,7 +259,7 @@ public class HeadNode
 //			head.acceptAndFeed();
 			head.runCommandLine();
 		}
-		catch (IOException e)
+		catch (IOException | InterruptedException e)
 		{
 			e.printStackTrace();
 		}
@@ -258,7 +270,7 @@ public class HeadNode
 	 * Add here everything that needs to cleaned up on sudden termination.
 	 */
 	private static final Collection<AutoCloseable> cleanup = Collections.synchronizedList(new ArrayList<AutoCloseable>());
-	public static void main(String[] args) throws UnknownHostException, IOException
+	public static void main(String[] args) throws UnknownHostException, IOException, InterruptedException
 	{
 		// Add kill hook
 		Runtime.getRuntime().addShutdownHook(new Thread()
@@ -298,6 +310,21 @@ public class HeadNode
 				System.err.println("Unknown role: " + args[0]);
 				return;
 		}
+		
+		
+		// Discover leaked threads
+//		System.out.println("DEBUG: thread leak:");
+//		Thread[] allThreads = new Thread[Thread.activeCount()];
+//        Thread.enumerate(allThreads);
+//        for (Thread thread : allThreads)
+//        {
+//        	if (!Thread.currentThread().equals(thread))
+//        	{
+//	        	System.out.print(thread);
+//	        	thread.join();
+//	        	System.out.println(" - joined");
+//        	}
+//        }
 	}
 	
 }

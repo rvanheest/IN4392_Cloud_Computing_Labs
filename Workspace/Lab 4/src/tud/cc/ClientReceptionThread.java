@@ -40,7 +40,7 @@ public class ClientReceptionThread
 	{
 		System.out.println(getName() + " started");
 		
-		while (true)
+		while (!closing)
 		{
 			// Accept connection
 			try 

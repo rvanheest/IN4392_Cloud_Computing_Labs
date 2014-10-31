@@ -39,7 +39,7 @@ public class ClientHandle
 		try
 		{
 			// Start accepting images
-			while (true)
+			while (!closing)
 			{
 				// Get request
 				Request request = connection.receive();

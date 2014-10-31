@@ -19,7 +19,7 @@ public class ResponderThread
 	
 	public ResponderThread(BlockingQueue<Task> processed, Map<UUID, ClientHandle> requestMap)
 	{
-		super("Responder");
+		super("ResponderThread");
 		this.processed = processed;
 		this.requestMap = requestMap;
 	}
@@ -28,9 +28,11 @@ public class ResponderThread
 	@Override
 	public void run() 
 	{
+		System.out.println(getName() + " started");
+		
 		try 
 		{
-			while (true)
+			while (!closing)
 			{
 				try
 				{

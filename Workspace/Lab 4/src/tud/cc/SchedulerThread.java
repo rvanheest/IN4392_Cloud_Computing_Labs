@@ -36,46 +36,49 @@ public class SchedulerThread
 	{
 		System.out.println(getName() + " started");
 		
-		while (true)
+		try
 		{
-			try
+			while (!closing)
 			{
-				if ( workerPool.values().size() < 1 )
-				{	// No workers
-					try {
-						sleep(5000);
-					} catch (InterruptedException e) {}
-					continue;
-				}
-				
-				// Take job from queue
-				ArrayList<Task> tasks = new ArrayList<>();
-				tasks.add(jobQueue.take());
-				Task nextTask = null;
-				while ((nextTask = jobQueue.poll()) != null)
-					tasks.add(nextTask);
-				
-				// Schedule
-				Map<Task, WorkerHandle> mapping = scheduler.schedule(tasks, workerPool.values());
-				
-				// Send to worker
-				for (Entry<Task, WorkerHandle> entry : mapping.entrySet())
+				try
 				{
-					Task task = entry.getKey();
-					WorkerHandle handle = entry.getValue();
-					task.scheduled();
-					handle.sendJob(task);
+					if ( workerPool.values().size() < 1 )
+					{	// No workers
+						try {
+							sleep(5000);
+						} catch (InterruptedException e) {}
+						continue;
+					}
+					
+					// Take job from queue
+					ArrayList<Task> tasks = new ArrayList<>();
+					tasks.add(jobQueue.take());
+					Task nextTask = null;
+					while ((nextTask = jobQueue.poll()) != null)
+						tasks.add(nextTask);
+					
+					// Schedule
+					Map<Task, WorkerHandle> mapping = scheduler.schedule(tasks, workerPool.values());
+					
+					// Send to worker
+					for (Entry<Task, WorkerHandle> entry : mapping.entrySet())
+					{
+						Task task = entry.getKey();
+						WorkerHandle handle = entry.getValue();
+						task.scheduled();
+						handle.sendJob(task);
+					}
+				}
+				catch (SchedulerException | IOException e)
+				{
+					e.printStackTrace();
 				}
 			}
-			catch (InterruptedException e)
-			{
-				if (!this.closing)
-					e.printStackTrace();
-			}
-			catch (SchedulerException | IOException e)
-			{
+		}
+		catch (InterruptedException e)
+		{
+			if (!this.closing)
 				e.printStackTrace();
-			}
 		}
 	}
 

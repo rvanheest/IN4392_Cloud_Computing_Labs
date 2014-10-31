@@ -50,7 +50,7 @@ public class WorkerHandle
 		
 		try
 		{
-			while (true)
+			while (!closing)
 			{
 				// Read processed jobs from worker
 				Task job = (Task) in.readObject();
