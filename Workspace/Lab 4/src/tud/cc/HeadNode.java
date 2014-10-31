@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -180,8 +181,9 @@ public class HeadNode
 					switch (command)
 					{
 						case "workers":
-							for (String inet : workerPool.keySet())
-								System.out.println(inet);
+							for (Entry<String, WorkerHandle> entry : workerPool.entrySet())
+//								System.out.println(inet);
+								System.out.println(entry.getValue());
 							break;
 						case "worker-details":
 							for (String details : workerDetails.keySet())
@@ -313,18 +315,17 @@ public class HeadNode
 		
 		
 		// Discover leaked threads
-//		System.out.println("DEBUG: thread leak:");
-//		Thread[] allThreads = new Thread[Thread.activeCount()];
-//        Thread.enumerate(allThreads);
-//        for (Thread thread : allThreads)
-//        {
-//        	if (!Thread.currentThread().equals(thread))
-//        	{
-//	        	System.out.print(thread);
-//	        	thread.join();
-//	        	System.out.println(" - joined");
-//        	}
-//        }
+		Thread[] allThreads = new Thread[Thread.activeCount()];
+        Thread.enumerate(allThreads);
+        if (allThreads.length > 1)
+        {
+        	System.out.println("\nDEBUG: thread leak:");
+	        for (Thread thread : allThreads)
+	        	if (!Thread.currentThread().equals(thread))
+		        	System.out.println(thread);
+	        System.out.println("DEBUG: forcing exit\n");
+	        System.exit(1);
+        }
 	}
 	
 }
