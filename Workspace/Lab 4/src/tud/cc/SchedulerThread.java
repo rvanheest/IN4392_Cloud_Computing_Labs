@@ -83,7 +83,7 @@ public class SchedulerThread
 	@Override
 	public void close() throws Exception 
 	{
-		this.closing = false;
+		this.closing = true;
 		this.interrupt();
 		
 		// TODO Auto-generated method stub
