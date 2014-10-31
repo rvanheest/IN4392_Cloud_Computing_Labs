@@ -8,6 +8,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.Map;
@@ -200,6 +202,7 @@ public class HeadNode
 							System.out.println("pong");
 							break;
 						case "break":
+						case "exit":
 							isCl = false;
 							break;
 						default:
@@ -235,6 +238,7 @@ public class HeadNode
 	{
 		try (HeadNode head = new HeadNode();)
 		{
+			cleanup.add(head);
 //			if (!noChild)
 //			{
 //				NodeDetails workerDetails = head.startWorker();
@@ -250,8 +254,31 @@ public class HeadNode
 	}
 	
 	
+	/**
+	 * Add here everything that needs to cleaned up on sudden termination.
+	 */
+	private static final Collection<AutoCloseable> cleanup = Collections.synchronizedList(new ArrayList<AutoCloseable>());
 	public static void main(String[] args) throws UnknownHostException, IOException
 	{
+		// Add kill hook
+		Runtime.getRuntime().addShutdownHook(new Thread()
+        {
+            @Override
+            public void run()
+            {
+                System.out.println("Kill received! Cleaning up...");
+                for (AutoCloseable mess : cleanup)
+                {
+					try {
+						mess.close();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+                }
+            }
+        });
+		
+		
 		switch (args[0])
 		{
 			case "head":
