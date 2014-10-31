@@ -22,7 +22,7 @@ class InputThread extends Thread {
 		try {
 			while (true) {
 				Task task = (Task) this.in.readObject();
-				task.received();
+				task.workerReceived();
 				System.out.println("CLIENT_INPUT - received image: " + task.getImage().length);
 				this.inputQueue.put(task);
 			}

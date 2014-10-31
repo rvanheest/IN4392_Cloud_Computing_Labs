@@ -35,6 +35,7 @@ public class ResponderThread
 				try
 				{
 					Task task = processed.take();
+					task.served();
 					
 					UUID requestUuid = task.getRequestUuid();
 					Request response = new Request(requestUuid, task.getImage());

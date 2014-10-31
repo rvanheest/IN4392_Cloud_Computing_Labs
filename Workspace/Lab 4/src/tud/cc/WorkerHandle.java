@@ -55,6 +55,7 @@ public class WorkerHandle
 				// Read processed jobs from worker
 				Task job = (Task) in.readObject();
 				System.out.println(getName() + ": received from worker: " + job.getImage().length + "b");
+				job.processed();
 				
 				// Queue response to client
 				processedQueue.add(job);

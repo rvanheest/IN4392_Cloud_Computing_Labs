@@ -63,6 +63,7 @@ public class SchedulerThread
 				{
 					Task task = entry.getKey();
 					WorkerHandle handle = entry.getValue();
+					task.scheduled();
 					handle.sendJob(task);
 				}
 			}
