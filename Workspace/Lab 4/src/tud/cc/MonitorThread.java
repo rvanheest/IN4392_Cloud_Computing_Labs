@@ -38,10 +38,24 @@ public class MonitorThread
 	}
 	
 	
-//	private boolean leaseCondition()
-//	{
-//		
-//	}
+	/**
+	 * Evaluate leasing condition
+	 * @return true if leasing is recommended
+	 */
+	private boolean leaseCondition()
+	{
+		return false;
+	}
+	
+	
+	/**
+	 * Evaluate releasing condition
+	 * @return true if releasing is recommended
+	 */
+	private boolean releaseCondition()
+	{
+		return false;
+	}
 	
 	
 	@Override
@@ -53,7 +67,17 @@ public class MonitorThread
 		{
 			while (!closing)
 			{
+				// Sample the state of the system
 				this.samples.add(headNode.takeSample());
+				
+				// Decide on leasing nodes
+				if (leaseCondition())
+					headNode.startWorker();
+				
+				// Decide on releasing nodes
+				if (releaseCondition())
+					headNode.decommissionRandom();
+				
 				sleep(1000);
 			}
 		}
