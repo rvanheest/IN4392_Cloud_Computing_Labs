@@ -109,8 +109,6 @@ public class HeadNode
 		return _cloudService;
 	}
 
-//	private final ServerSocket workerSocket;
-//	private final ServerSocket clientSocket;
 	private final BlockingQueue<Task> jobQueue = new java.util.concurrent.LinkedBlockingDeque<Task>();
 	private final BlockingQueue<Task> processed = new java.util.concurrent.LinkedBlockingDeque<Task>();
 	private final ConcurrentHashMap<String, WorkerHandle> workerPool = new ConcurrentHashMap<>();
@@ -130,7 +128,7 @@ public class HeadNode
 		threads.add(new ClientReceptionThread(HeadClientPort, jobQueue, threads, requestMap));
 		threads.add(new SchedulerThread(jobQueue, workerPool));
 		threads.add(new ResponderThread(processed, requestMap));
-		// TODO monitor thread
+		threads.add(new MonitorThread(workerPool, jobQueue));
 		
 		for (Thread t : threads)
 			t.start();
@@ -248,17 +246,11 @@ public class HeadNode
 	}
 	
 	
-	public static void beHead(boolean noChild)
+	public static void beHead()
 	{
 		try (HeadNode head = new HeadNode();)
 		{
 			cleanup.add(head);
-//			if (!noChild)
-//			{
-//				NodeDetails workerDetails = head.startWorker();
-//				System.out.println("Leased: " + workerDetails);
-//			}
-//			head.acceptAndFeed();
 			head.runCommandLine();
 		}
 		catch (IOException | InterruptedException e)
@@ -296,13 +288,9 @@ public class HeadNode
 		switch (args[0])
 		{
 			case "head":
-				boolean nochild = false;
-				if (args.length > 1)
-					nochild = args[1].equals("nochild");
-				HeadNode.beHead(nochild);
+				HeadNode.beHead();
 				break;
 			case "worker":
-				//beWorker(args[1]); //TODO remove hardcoding
 				WorkerNode.beWorker(args[1]);
 				break;
 			case "emulator":
