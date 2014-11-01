@@ -97,7 +97,7 @@ public class SchedulerThread
 	{
 		ArrayList<WorkerHandle> filtered = new ArrayList<WorkerHandle>(allWorkers.size());
 		for (WorkerHandle handle : allWorkers)
-			if (handle.isStarve())
+			if (!handle.isStarve())
 				filtered.add(handle);
 		return filtered;
 	}
