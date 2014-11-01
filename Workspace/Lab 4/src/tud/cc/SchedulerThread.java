@@ -1,9 +1,7 @@
 package tud.cc;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 
@@ -58,7 +56,7 @@ public class SchedulerThread
 						tasks.add(nextTask);
 					
 					// Schedule
-					Map<Task, WorkerHandle> mapping = scheduler.schedule(tasks, workerPool.values());
+					Map<Task, WorkerHandle> mapping = scheduler.schedule(tasks, getElligibleWorkers(workerPool.values()));
 					
 					// Send to worker
 					for (Entry<Task, WorkerHandle> entry : mapping.entrySet())
@@ -66,7 +64,14 @@ public class SchedulerThread
 						Task task = entry.getKey();
 						WorkerHandle handle = entry.getValue();
 						task.scheduled();
-						handle.sendJob(task);
+						try {
+							handle.sendJob(task);
+						} catch (IllegalAccessException e) {
+							// Job was rejected. Re-queue job
+							jobQueue.add(task);
+							// Print error; This error should not occur.
+							e.printStackTrace();
+						}
 					}
 				}
 				catch (SchedulerException | IOException e)
@@ -80,6 +85,21 @@ public class SchedulerThread
 			if (!this.closing)
 				e.printStackTrace();
 		}
+	}
+	
+	
+	/**
+	 * Filter a collection of workers to those that are accepting work.
+	 * @param allWorkers The original collection of workers.
+	 * @return The filtered collection.
+	 */
+	private Collection<WorkerHandle> getElligibleWorkers(Collection<WorkerHandle> allWorkers)
+	{
+		ArrayList<WorkerHandle> filtered = new ArrayList<WorkerHandle>(allWorkers.size());
+		for (WorkerHandle handle : allWorkers)
+			if (handle.isStarve())
+				filtered.add(handle);
+		return filtered;
 	}
 
 
