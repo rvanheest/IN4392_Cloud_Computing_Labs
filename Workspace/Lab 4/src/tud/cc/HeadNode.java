@@ -262,6 +262,22 @@ public class HeadNode
 	}
 	
 	
+	/**
+	 * Decommission a worker at random
+	 * @throws Exception 
+	 */
+	public void decommissionRandom() throws Exception
+	{
+		if (this.workerPool.size() < 1)
+			throw new IllegalStateException("Cannot decommission worker because there are no workers");
+		
+		String worker = this.workerPool.keys().nextElement();
+		WorkerHandle handle = this.workerPool.get(worker);
+		this.workerPool.remove(worker);
+		handle.setForDecommision();
+	}
+	
+	
 	public Sample takeSample()
 	{
 		Task queueHead = jobQueue.peek();
