@@ -17,7 +17,18 @@ import data.Task;
 public class WorkerHandle
 	extends CloseableThread
 {
+	/**
+	 * The handle is in the process of releasing resources
+	 */
 	private boolean closing = false;
+	/**
+	 * The handle is not accepting any more work
+	 */
+	private boolean starve = false;
+	/**
+	 * The handle is to decommission itself as soon as current responsibilities expire.
+	 */
+	private boolean decommision = false;
 	
 	private final NodeDetails nodeDetails;
 	private final Socket workerSocket;
@@ -33,6 +44,14 @@ public class WorkerHandle
 	private final Map<UUID, Integer> jobsInProcess = Collections.synchronizedMap(new HashMap<UUID, Integer>());
 	
 	
+	/**
+	 * 
+	 * @param nodeDetails
+	 * @param workerSocket
+	 * @param processedQueue
+	 * @param workerPool
+	 * @throws IOException
+	 */
 	public WorkerHandle(NodeDetails nodeDetails, Socket workerSocket, Queue<Task> processedQueue, Map<String, WorkerHandle> workerPool) throws IOException
 	{
 		super("WorkerHandle");
@@ -47,6 +66,27 @@ public class WorkerHandle
 		this.processedQueue = processedQueue;
 		this.workerPool = workerPool;
 	}
+	
+	
+	/*
+	 * Set this worker to starve.
+	 * A starving worker will not accept more jobs;
+	 */
+	public synchronized void setStarve(boolean starve)
+	{
+		this.starve = starve;
+	}
+	
+	
+	/*
+	 * Get if this worker is starving
+	 * A starving worker will not accept more jobs;
+	 */
+	public boolean isStarve()
+	{
+		return this.starve;
+	}
+	
 	
 	@Override
 	public void run()
@@ -65,6 +105,10 @@ public class WorkerHandle
 				
 				// Queue response to client
 				processedQueue.add(job);
+				
+				if (this.decommision)
+					if (this.freeToDecommission())
+						this.close();
 			}
 		}
 		catch (Exception e)
@@ -91,11 +135,15 @@ public class WorkerHandle
 	 * This function blocks on the calling thread.
 	 * @param job The job to sent.
 	 * @throws IOException The connection to the worker has failed.
+	 * @throws IllegalAccessException 
 	 */
-	public synchronized void sendJob(Task job) throws IOException
+	public synchronized void sendJob(Task job) throws IOException, IllegalAccessException
 	{
 		if (job == null)
 			throw new NullPointerException("Job cannot be null");
+		
+		if (this.isStarve())
+			throw new IllegalAccessException("Worker cannot accept jobs while starving");
 		
 		System.out.println(Thread.currentThread().getName() +  " sending job to " + workerSocket.getInetAddress().getHostAddress());
 
@@ -104,7 +152,7 @@ public class WorkerHandle
 		// Send job
 		out.writeObject(job);
 	}
-	
+
 	
 	/**
 	 * Release the previously leased EC2 instance
@@ -115,7 +163,33 @@ public class WorkerHandle
 		HeadNode.getService().releaseNode(nodeDetails);
 	}
 	
-
+	
+	/**
+	 * This worker will starve itself and be commissioned when the last job is completed.
+	 * If no work is in progress, the worker will be commissioned immediately.
+	 * @throws Exception 
+	 */
+	public synchronized void setForDecommision() throws Exception
+	{
+		this.decommision = true;
+		this.setStarve(true);
+		
+		if (this.freeToDecommission())
+			this.close();
+	}
+	
+	
+	/**
+	 * Returns true if the worker can be decommissioned safely.
+	 * @return
+	 */
+	public synchronized boolean freeToDecommission()
+	{
+		return this.isStarve()
+				&& this.jobsInProcess.isEmpty();
+	}
+	
+	
 	/**
 	 * Close socket, remove worker from local collections and release the machine.
 	 */
