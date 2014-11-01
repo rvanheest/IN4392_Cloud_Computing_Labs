@@ -23,10 +23,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 
+import com.amazonaws.services.elasticbeanstalk.model.Queue;
+
 import scheduler.*;
 import amazonTests.Configurations;
 import amazonTests.EC2CloudService;
 import amazonTests.NodeDetails;
+import data.Sample;
 import data.Task;
 import emulator.Emulator;
 
@@ -116,7 +119,12 @@ public class HeadNode
 	private final Map<UUID, ClientHandle> requestMap = new ConcurrentHashMap<>();	
 	
 	
-	private Deque<CloseableThread> threads = new LinkedBlockingDeque<>();
+	private final Deque<CloseableThread> threads = new LinkedBlockingDeque<>();
+	private final WorkerReceptionThread workerReceptionThread;
+	private final ClientReceptionThread clientReceptionThread;
+	private final SchedulerThread schedulerThread;
+	private final ResponderThread responderThread;
+	private final MonitorThread monitorThread;
 	
 	
 	public HeadNode() throws IOException
@@ -124,11 +132,11 @@ public class HeadNode
 		System.out.println("Initialising head node...");
 		
 		// Start all the threads
-		threads.add(new WorkerReceptionThread(HeadWorkerPort, workerPool, processed, threads, workerDetails));
-		threads.add(new ClientReceptionThread(HeadClientPort, jobQueue, threads, requestMap));
-		threads.add(new SchedulerThread(jobQueue, workerPool));
-		threads.add(new ResponderThread(processed, requestMap));
-		threads.add(new MonitorThread(workerPool, jobQueue));
+		threads.add(this.workerReceptionThread = new WorkerReceptionThread(HeadWorkerPort, workerPool, processed, threads, workerDetails));
+		threads.add(this.clientReceptionThread = new ClientReceptionThread(HeadClientPort, jobQueue, threads, requestMap));
+		threads.add(this.schedulerThread = new SchedulerThread(jobQueue, workerPool));
+		threads.add(this.responderThread = new ResponderThread(processed, requestMap));
+		threads.add(this.monitorThread = new MonitorThread(this));
 		
 		for (Thread t : threads)
 			t.start();
@@ -204,6 +212,14 @@ public class HeadNode
 							WorkerHandle handle = workerPool.get(tokens[1]);
 							handle.close();
 							break;
+						case "sample":
+							System.out.println(this.takeSample());
+							break;
+						case "history":
+							int window = Integer.parseInt(tokens[1]);
+							for (Sample sample : this.monitorThread.getHistory(window))
+								System.out.println(sample);
+							break;
 						case "ping":
 							System.out.println("pong");
 							break;
@@ -243,6 +259,17 @@ public class HeadNode
 		this.workerDetails.put(details.getNodePrivateIP().getHostAddress(), details);
 		
 		return details;
+	}
+	
+	
+	public Sample takeSample()
+	{
+		Task queueHead = jobQueue.peek();
+		return new Sample
+		(
+				jobQueue.size(),
+				(queueHead != null) ? System.currentTimeMillis() - queueHead.getTimeQueued() : 0
+		);
 	}
 	
 	

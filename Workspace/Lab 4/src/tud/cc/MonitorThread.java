@@ -1,9 +1,9 @@
 package tud.cc;
 
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
 
+import data.Sample;
 import data.Task;
 
 public class MonitorThread 
@@ -11,17 +11,37 @@ public class MonitorThread
 {
 	private boolean closing = false;
 	
-	private final Map<String, WorkerHandle> workerPool;
-	private final BlockingQueue<Task> jobQueue;
+	private final HeadNode headNode;
+	
+	private final List<Sample> samples = new ArrayList<>();
 	
 	
-	public MonitorThread(Map<String, WorkerHandle> workerPool, BlockingQueue<Task> jobQueue)
+	public List<Sample> getHistory()
+	{
+		return Collections.unmodifiableList(samples);
+	}
+	
+	
+	public List<Sample> getHistory(int window)
+	{
+		List<Sample> history = getHistory();
+		window = Math.min(window, history.size());
+		return history.subList(history.size()-window, history.size());
+	}
+	
+	
+	public MonitorThread(HeadNode headNode)
 	{
 		super("MonitorThread");
 		
-		this.workerPool = workerPool;
-		this.jobQueue = jobQueue;
+		this.headNode = headNode;
 	}
+	
+	
+//	private boolean leaseCondition()
+//	{
+//		
+//	}
 	
 	
 	@Override
@@ -33,6 +53,7 @@ public class MonitorThread
 		{
 			while (!closing)
 			{
+				this.samples.add(headNode.takeSample());
 				sleep(1000);
 			}
 		}
