@@ -266,7 +266,7 @@ public class HeadNode
 	 * Decommission a worker at random
 	 * @throws Exception 
 	 */
-	public void decommissionRandom() throws Exception
+	public void decommissionRandom()
 	{
 		if (this.workerPool.size() < 1)
 			throw new IllegalStateException("Cannot decommission worker because there are no workers");

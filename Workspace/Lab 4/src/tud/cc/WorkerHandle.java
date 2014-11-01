@@ -169,13 +169,18 @@ public class WorkerHandle
 	 * If no work is in progress, the worker will be commissioned immediately.
 	 * @throws Exception 
 	 */
-	public synchronized void setForDecommision() throws Exception
+	public synchronized void setForDecommision()
 	{
 		this.decommision = true;
 		this.setStarve(true);
 		
 		if (this.freeToDecommission())
-			this.close();
+			try {
+				this.close();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	}
 	
 	
