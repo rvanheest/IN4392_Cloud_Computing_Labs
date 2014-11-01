@@ -144,6 +144,16 @@ public class HeadNode
 	
 	
 	/**
+	 * Get all the live workers
+	 * @return
+	 */
+	public Collection<WorkerHandle> getWorkers()
+	{
+		return Collections.unmodifiableCollection(this.workerPool.values());
+	}
+	
+	
+	/**
 	 * AutoCloseable implementation
 	 * @throws InterruptedException 
 	 */
