@@ -42,6 +42,10 @@ public class WorkerHandle
 	 * as a set of (jobID -> imageSize) tuples
 	 */
 	private final Map<UUID, Integer> jobsInProcess = Collections.synchronizedMap(new HashMap<UUID, Integer>());
+	public Map<UUID, Integer> getJobsInProcess()
+	{
+		return Collections.unmodifiableMap(jobsInProcess);
+	}
 	
 	
 	/**
