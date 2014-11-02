@@ -55,10 +55,23 @@ public class ClientHandle
     			task.queued();	
 			}
 		}
+		catch (IOException e)
+		{
+			System.out.println(getName() + " connection to " + connection.socket.getInetAddress().getHostAddress() + " lost");
+		}
 		catch (Exception e)
 		{
 			if (!closing)
 				e.printStackTrace();
+		}
+		finally
+		{
+			try {
+				// TODO remove client?
+				connection.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
