@@ -8,15 +8,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Deque;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -115,7 +109,7 @@ public class HeadNode
 	private final BlockingQueue<Task> jobQueue = new java.util.concurrent.LinkedBlockingDeque<Task>();
 	private final BlockingQueue<Task> processed = new java.util.concurrent.LinkedBlockingDeque<Task>();
 	private final ConcurrentHashMap<String, WorkerHandle> workerPool = new ConcurrentHashMap<>();
-	private final ConcurrentHashMap<String, NodeDetails> workerDetails = new ConcurrentHashMap<>();
+	private final Map<String, NodeDetails> expectedWorkerDetails = Collections.synchronizedMap(new HashMap<String, NodeDetails>());
 	private final Map<UUID, ClientHandle> requestMap = new ConcurrentHashMap<>();	
 	
 	
@@ -127,12 +121,18 @@ public class HeadNode
 	private final MonitorThread monitorThread;
 	
 	
+	public boolean isLeasing() 
+	{ 
+		return expectedWorkerDetails.size() != 0;
+	}
+	
+	
 	public HeadNode() throws IOException
 	{
 		System.out.println("Initialising head node...");
 		
 		// Start all the threads
-		threads.add(this.workerReceptionThread = new WorkerReceptionThread(HeadWorkerPort, workerPool, processed, threads, workerDetails));
+		threads.add(this.workerReceptionThread = new WorkerReceptionThread(HeadWorkerPort, workerPool, processed, threads, expectedWorkerDetails));
 		threads.add(this.clientReceptionThread = new ClientReceptionThread(HeadClientPort, jobQueue, threads, requestMap));
 		threads.add(this.schedulerThread = new SchedulerThread(jobQueue, workerPool));
 		threads.add(this.responderThread = new ResponderThread(processed, requestMap));
@@ -202,7 +202,7 @@ public class HeadNode
 								System.out.println(entry.getValue());
 							break;
 						case "worker-details":
-							for (String details : workerDetails.keySet())
+							for (String details : expectedWorkerDetails.keySet())
 								System.out.println(details);
 							break;
 						case "queue":
@@ -263,10 +263,13 @@ public class HeadNode
 	 * Deploys a new node and returns the IP of the node
 	 * @return The details of the node just deployed
 	 */
-	public NodeDetails startWorker()
-	{		
+	public synchronized NodeDetails startWorker()
+	{
+		this.expectedWorkerDetails.put("Pending", null);
+		
 		NodeDetails details = getService().leaseNode(new Configurations("random", null));
-		this.workerDetails.put(details.getNodePrivateIP().getHostAddress(), details);
+		this.expectedWorkerDetails.put(details.getNodePrivateIP().getHostAddress(), details);
+		this.expectedWorkerDetails.remove("Pending");
 		
 		return details;
 	}
