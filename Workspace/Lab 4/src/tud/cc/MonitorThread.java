@@ -1,5 +1,6 @@
 package tud.cc;
 
+import java.io.FilterReader;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
@@ -9,6 +10,8 @@ import data.Task;
 public class MonitorThread 
 	extends CloseableThread 
 {
+	public static final long decisionInterval = 10_000; // In milliseconds
+	
 	private boolean closing = false;
 	
 	private final HeadNode headNode;
@@ -42,9 +45,35 @@ public class MonitorThread
 	 * Evaluate leasing condition
 	 * @return true if leasing is recommended
 	 */
-	private boolean leaseCondition()
+	private Boolean[] leaseConditions()
 	{
-		return false;
+		Collection<WorkerHandle> workers = getWorkers();
+		
+		// Condition 1: there are no workers
+		boolean cond1 = false;
+		if (workers.size() == 0)
+			cond1 = true;
+		
+		// Condition 2: job queue exceeds 10 jobs for 5 consecutive samples
+		boolean cond2 = false;
+		int over = 0;
+		for (Sample sample : this.samples)
+			if (sample.queueSize > 10)
+				over++;
+		if (over > 10)
+			cond2 = true;
+		
+		// Condition 3: each worker has more than 4 jobs
+		boolean cond3 = true;
+		for (WorkerHandle worker : workers)
+			if (worker.getJobsInProcess().size() < 4)
+				cond3 = false;
+		
+		return new Boolean[] {
+				cond1,
+				cond2,
+				cond3
+		};
 	}
 	
 	
@@ -52,9 +81,60 @@ public class MonitorThread
 	 * Evaluate releasing condition
 	 * @return true if releasing is recommended
 	 */
-	private boolean releaseCondition()
+	private Boolean[] releaseConditions()
 	{
+		Collection<WorkerHandle> workers = getWorkers();
+		
+		// Condition 1: if two workers have no work
+		boolean cond1 = false;
+		int idle = 0;
+		for (WorkerHandle worker : workers)
+			if (worker.getJobsInProcess().size() == 0)
+				idle++;
+		if (idle >= 2)
+			cond1 = true;
+		
+		// Condition 2:
+		// ...
+		
+		return new Boolean[] {
+				cond1
+		};
+	}
+	
+	
+	private <T> String arrayToString(T[] array)
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append("[");
+		for (T item : array)
+			sb.append(item).append(", ");
+		sb.append("]");
+		return sb.toString();
+	}
+	
+	
+	private boolean any(Boolean[] bools)
+	{
+		for (boolean b : bools)
+			if (b)
+				return true;
 		return false;
+	}
+	
+	
+	/**
+	 * Get all the active workers. Excludes starving workers
+	 * @return
+	 */
+	private Collection<WorkerHandle> getWorkers()
+	{
+		Collection<WorkerHandle> allWorkers = this.headNode.getWorkers();
+		Collection<WorkerHandle> filteredWorkers = new ArrayList<WorkerHandle>(allWorkers.size());
+		for (WorkerHandle worker : allWorkers)
+			if (!worker.isStarve())
+				filteredWorkers.add(worker);
+		return allWorkers;
 	}
 	
 	
@@ -65,25 +145,44 @@ public class MonitorThread
 		
 		try 
 		{
+			long lastDecision = 0;
 			while (!closing)
 			{
 				// Sample the state of the system
 				this.samples.add(headNode.takeSample());
 				
-				// Decide on leasing nodes
-				if (leaseCondition())
-					headNode.startWorker();
-				
-				// Decide on releasing nodes
-				if (releaseCondition())
-					headNode.decommissionRandom();
+				// Make decision every decisionInterval milliseconds
+				if (lastDecision + decisionInterval < System.currentTimeMillis())
+				{
+					lastDecision = System.currentTimeMillis();
+					
+					if (!headNode.isLeasing())
+					{
+						// Decide on leasing nodes
+						Boolean[] leaseConds = leaseConditions(); 
+						if (any(leaseConds))
+						{
+							System.out.println(getName() + " recommended leasing: " + arrayToString(leaseConds));
+							headNode.startWorker();
+						}
+						
+						// Decide on releasing nodes
+						Boolean[] releaseConds = releaseConditions(); 
+						if (any(releaseConds))
+						{
+							System.out.println(getName() + " recommended releasing: " + arrayToString(releaseConds));
+							headNode.decommissionRandom();
+						}
+					}
+				}
 				
 				sleep(1000);
 			}
 		}
 		catch (InterruptedException e) 
 		{
-			e.printStackTrace();
+			if (!closing)
+				e.printStackTrace();
 		}
 	}
 	
