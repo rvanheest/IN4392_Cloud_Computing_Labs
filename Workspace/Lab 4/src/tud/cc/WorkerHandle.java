@@ -209,6 +209,7 @@ public class WorkerHandle
 		this.interrupt();
 		
 		workerPool.remove(this.nodeDetails.getNodePrivateIP().getHostAddress());
+		// TODO remove thread from thread pool too
 		
 		this.in.close();
 		this.out.close();
