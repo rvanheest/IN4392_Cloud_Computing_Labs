@@ -8,24 +8,22 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Deque;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 
+import com.amazonaws.services.elasticbeanstalk.model.Queue;
+
 import scheduler.*;
 import amazonTests.Configurations;
 import amazonTests.EC2CloudService;
 import amazonTests.NodeDetails;
+import data.Sample;
 import data.Task;
 import emulator.Emulator;
 
@@ -108,16 +106,25 @@ public class HeadNode
 		return _cloudService;
 	}
 
-//	private final ServerSocket workerSocket;
-//	private final ServerSocket clientSocket;
 	private final BlockingQueue<Task> jobQueue = new java.util.concurrent.LinkedBlockingDeque<Task>();
 	private final BlockingQueue<Task> processed = new java.util.concurrent.LinkedBlockingDeque<Task>();
 	private final ConcurrentHashMap<String, WorkerHandle> workerPool = new ConcurrentHashMap<>();
-	private final ConcurrentHashMap<String, NodeDetails> workerDetails = new ConcurrentHashMap<>();
+	private final Map<String, NodeDetails> expectedWorkerDetails = Collections.synchronizedMap(new HashMap<String, NodeDetails>());
 	private final Map<UUID, ClientHandle> requestMap = new ConcurrentHashMap<>();	
 	
 	
-	private Deque<CloseableThread> threads = new LinkedBlockingDeque<>();
+	private final Deque<CloseableThread> threads = new LinkedBlockingDeque<>();
+	private final WorkerReceptionThread workerReceptionThread;
+	private final ClientReceptionThread clientReceptionThread;
+	private final SchedulerThread schedulerThread;
+	private final ResponderThread responderThread;
+	private final MonitorThread monitorThread;
+	
+	
+	public boolean isLeasing() 
+	{ 
+		return expectedWorkerDetails.size() != 0;
+	}
 	
 	
 	public HeadNode() throws IOException
@@ -125,14 +132,24 @@ public class HeadNode
 		System.out.println("Initialising head node...");
 		
 		// Start all the threads
-		threads.add(new WorkerReceptionThread(HeadWorkerPort, workerPool, processed, threads, workerDetails));
-		threads.add(new ClientReceptionThread(HeadClientPort, jobQueue, threads, requestMap));
-		threads.add(new SchedulerThread(jobQueue, workerPool));
-		threads.add(new ResponderThread(processed, requestMap));
-		// TODO monitor thread
+		threads.add(this.workerReceptionThread = new WorkerReceptionThread(HeadWorkerPort, workerPool, processed, threads, expectedWorkerDetails));
+		threads.add(this.clientReceptionThread = new ClientReceptionThread(HeadClientPort, jobQueue, threads, requestMap));
+		threads.add(this.schedulerThread = new SchedulerThread(jobQueue, workerPool));
+		threads.add(this.responderThread = new ResponderThread(processed, requestMap));
+		threads.add(this.monitorThread = new MonitorThread(this));
 		
 		for (Thread t : threads)
 			t.start();
+	}
+	
+	
+	/**
+	 * Get all the live workers
+	 * @return
+	 */
+	public Collection<WorkerHandle> getWorkers()
+	{
+		return Collections.unmodifiableCollection(this.workerPool.values());
 	}
 	
 	
@@ -180,11 +197,12 @@ public class HeadNode
 					switch (command)
 					{
 						case "workers":
-							for (String inet : workerPool.keySet())
-								System.out.println(inet);
+							for (Entry<String, WorkerHandle> entry : workerPool.entrySet())
+//								System.out.println(inet);
+								System.out.println(entry.getValue());
 							break;
 						case "worker-details":
-							for (String details : workerDetails.keySet())
+							for (String details : expectedWorkerDetails.keySet())
 								System.out.println(details);
 							break;
 						case "queue":
@@ -203,6 +221,14 @@ public class HeadNode
 						case "release":
 							WorkerHandle handle = workerPool.get(tokens[1]);
 							handle.close();
+							break;
+						case "sample":
+							System.out.println(this.takeSample());
+							break;
+						case "history":
+							int window = Integer.parseInt(tokens[1]);
+							for (Sample sample : this.monitorThread.getHistory(window))
+								System.out.println(sample);
 							break;
 						case "ping":
 							System.out.println("pong");
@@ -237,26 +263,50 @@ public class HeadNode
 	 * Deploys a new node and returns the IP of the node
 	 * @return The details of the node just deployed
 	 */
-	public NodeDetails startWorker()
-	{		
+	public synchronized NodeDetails startWorker()
+	{
+		this.expectedWorkerDetails.put("Pending", null);
+		
 		NodeDetails details = getService().leaseNode(new Configurations("random", null));
-		this.workerDetails.put(details.getNodePrivateIP().getHostAddress(), details);
+		this.expectedWorkerDetails.put(details.getNodePrivateIP().getHostAddress(), details);
+		this.expectedWorkerDetails.remove("Pending");
 		
 		return details;
 	}
 	
 	
-	public static void beHead(boolean noChild)
+	/**
+	 * Decommission a worker at random
+	 * @throws Exception 
+	 */
+	public void decommissionRandom()
+	{
+		if (this.workerPool.size() < 1)
+			throw new IllegalStateException("Cannot decommission worker because there are no workers");
+		
+		String worker = this.workerPool.keys().nextElement();
+		WorkerHandle handle = this.workerPool.get(worker);
+		this.workerPool.remove(worker);
+		handle.setForDecommision();
+	}
+	
+	
+	public Sample takeSample()
+	{
+		Task queueHead = jobQueue.peek();
+		return new Sample
+		(
+				jobQueue.size(),
+				(queueHead != null) ? System.currentTimeMillis() - queueHead.getTimeQueued() : 0
+		);
+	}
+	
+	
+	public static void beHead()
 	{
 		try (HeadNode head = new HeadNode();)
 		{
 			cleanup.add(head);
-//			if (!noChild)
-//			{
-//				NodeDetails workerDetails = head.startWorker();
-//				System.out.println("Leased: " + workerDetails);
-//			}
-//			head.acceptAndFeed();
 			head.runCommandLine();
 		}
 		catch (IOException | InterruptedException e)
@@ -294,13 +344,9 @@ public class HeadNode
 		switch (args[0])
 		{
 			case "head":
-				boolean nochild = false;
-				if (args.length > 1)
-					nochild = args[1].equals("nochild");
-				HeadNode.beHead(nochild);
+				HeadNode.beHead();
 				break;
 			case "worker":
-				//beWorker(args[1]); //TODO remove hardcoding
 				WorkerNode.beWorker(args[1]);
 				break;
 			case "emulator":
@@ -313,18 +359,17 @@ public class HeadNode
 		
 		
 		// Discover leaked threads
-//		System.out.println("DEBUG: thread leak:");
-//		Thread[] allThreads = new Thread[Thread.activeCount()];
-//        Thread.enumerate(allThreads);
-//        for (Thread thread : allThreads)
-//        {
-//        	if (!Thread.currentThread().equals(thread))
-//        	{
-//	        	System.out.print(thread);
-//	        	thread.join();
-//	        	System.out.println(" - joined");
-//        	}
-//        }
+		Thread[] allThreads = new Thread[Thread.activeCount()];
+        Thread.enumerate(allThreads);
+        if (allThreads.length > 1)
+        {
+        	System.out.println("\nDEBUG: thread leak:");
+	        for (Thread thread : allThreads)
+	        	if (!Thread.currentThread().equals(thread))
+		        	System.out.println(thread);
+	        System.out.println("DEBUG: forcing exit\n");
+	        System.exit(1);
+        }
 	}
 	
 }

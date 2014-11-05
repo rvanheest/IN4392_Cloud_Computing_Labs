@@ -1,5 +1,6 @@
 package emulator;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -9,6 +10,7 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,6 +22,8 @@ import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+
+import javax.imageio.ImageIO;
 
 import tud.cc.HeadNode;
 import data.Timing;
@@ -33,6 +37,8 @@ public class Emulator implements AutoCloseable {
 	private final ConcurrentMap<UUID, Long> sendTimes = new ConcurrentHashMap<>();
 	private final BlockingQueue<Timing> completionTimes = new LinkedBlockingQueue<Timing>();
 
+	private final ArrayList<BufferedImage> images = new ArrayList<>(); 
+	
 	private final InputThread input;
 	private final LoggingThread logging;
 
@@ -43,13 +49,14 @@ public class Emulator implements AutoCloseable {
 		this.socket = new Socket(InetAddress.getByName(head), HeadNode.HeadClientPort);
 		this.out = new ObjectOutputStream(this.socket.getOutputStream());
 		this.in = new ObjectInputStream(this.socket.getInputStream());
-
+		
 		this.input = new InputThread(this.in, this.sendTimes, this.completionTimes);
 		this.logging = new LoggingThread(this.completionTimes, this.logger);
 
 		this.directory = dir;
 
 		this.initLogger();
+		this.bufferImages(dir);
 		this.startProcessing();
 	}
 
@@ -68,6 +75,13 @@ public class Emulator implements AutoCloseable {
 		catch (SecurityException | IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private void bufferImages(File imageDirectory) throws IOException {
+		System.out.println("Preloading images");
+		File[] imageFiles = imageDirectory.listFiles();
+		for (File file : imageFiles)
+			images.add(ImageIO.read(file));
 	}
 
 	private void startProcessing() {
@@ -99,8 +113,8 @@ public class Emulator implements AutoCloseable {
 									+ "two images (in milliseconds)?");
 							int timeToSleep = Integer.parseInt(consoleInput.readLine().trim());
 
-							new RandomOutputThread(this.directory, this.out, this.sendTimes,
-									num, timeToSleep).start();
+							new RandomOutputThread(this.out, this.sendTimes,
+									num, timeToSleep, this.images).start();
 						}
 						catch (NumberFormatException e) {
 							System.err.println("a number was not formatted correctly");
@@ -112,7 +126,7 @@ public class Emulator implements AutoCloseable {
 									+ "two images (in milliseconds)?");
 							int sleepTime = Integer.parseInt(consoleInput.readLine().trim());
 
-							new AllOutputThread(this.directory, this.out, this.sendTimes, sleepTime)
+							new AllOutputThread(this.out, this.sendTimes, sleepTime, this.images)
 									.start();
 						}
 						catch (NumberFormatException e) {
