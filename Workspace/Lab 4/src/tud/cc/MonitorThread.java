@@ -79,19 +79,19 @@ public class MonitorThread
 	
 	/**
 	 * Evaluate releasing condition
-	 * @return true if releasing is recommended
+	 * @return true if releasing one worker is recommended
 	 */
 	private Boolean[] releaseConditions()
 	{
 		Collection<WorkerHandle> workers = getWorkers();
 		
-		// Condition 1: if two workers have no work
+		// Condition 1: if three workers have no work
 		boolean cond1 = false;
 		int idle = 0;
 		for (WorkerHandle worker : workers)
 			if (worker.getJobsInProcess().size() == 0)
 				idle++;
-		if (idle >= 2)
+		if (idle >= 3)
 			cond1 = true;
 		
 		// Condition 2:
