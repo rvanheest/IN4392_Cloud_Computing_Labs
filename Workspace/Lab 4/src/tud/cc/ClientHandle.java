@@ -43,7 +43,7 @@ public class ClientHandle
 			{
 				// Get request
 				Request request = connection.receive();
-    			System.out.println(getName() + " received request " + request.getImage().length + "b");
+    			//System.out.println(getName() + " received request " + request.getImage().length + "b");
 
     			// TODO Image backup
     			
