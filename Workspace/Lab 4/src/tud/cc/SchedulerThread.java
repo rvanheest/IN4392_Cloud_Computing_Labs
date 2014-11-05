@@ -70,7 +70,7 @@ public class SchedulerThread
 					
 					// Take more jobs to schedule at once
 					// Don't take more than two per worker
-					while (tasks.size() <= eligibleWorkers.size()*2)
+					while (tasks.size() < eligibleWorkers.size()*2)
 					{
 						Task nextTask = jobQueue.poll();
 						if (nextTask == null)
