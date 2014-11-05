@@ -79,6 +79,10 @@ public class Task
 	public byte[] getImage() {
 		return image;
 	}
+	
+	public int getImageSize() {
+		return this.getImage().length;
+	}
 
 	public void queued()
 	{
