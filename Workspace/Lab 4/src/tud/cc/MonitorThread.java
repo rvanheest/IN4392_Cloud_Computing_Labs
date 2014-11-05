@@ -57,7 +57,7 @@ public class MonitorThread
 		// Condition 2: job queue exceeds 10 jobs for 5 consecutive samples
 		boolean cond2 = false;
 		int over = 0;
-		for (Sample sample : this.samples.subList(samples.size()-5, samples.size()))
+		for (Sample sample : this.samples.subList(Math.max(samples.size()-5,0), samples.size()))
 			if (sample.queueSize > 10)
 				over++;
 		if (over > 10)
