@@ -1,5 +1,7 @@
 package tud.cc;
 
+import imageProcessing.worker.WorkerHandshake;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -30,6 +32,7 @@ public class WorkerHandle
 	 */
 	private boolean decommision = false;
 	
+	public final WorkerHandshake handshake;
 	private final NodeDetails nodeDetails;
 	private final Socket workerSocket;
 	private final ObjectInputStream in;
@@ -55,8 +58,9 @@ public class WorkerHandle
 	 * @param processedQueue
 	 * @param workerPool
 	 * @throws IOException
+	 * @throws ClassNotFoundException 
 	 */
-	public WorkerHandle(NodeDetails nodeDetails, Socket workerSocket, Queue<Task> processedQueue, Map<String, WorkerHandle> workerPool) throws IOException
+	public WorkerHandle(NodeDetails nodeDetails, Socket workerSocket, Queue<Task> processedQueue, Map<String, WorkerHandle> workerPool) throws IOException, ClassNotFoundException
 	{
 		super("WorkerHandle");
 		
@@ -69,6 +73,8 @@ public class WorkerHandle
 		this.out = new ObjectOutputStream(workerSocket.getOutputStream());
 		this.processedQueue = processedQueue;
 		this.workerPool = workerPool;
+		
+		this.handshake = (WorkerHandshake) in.readObject();
 	}
 	
 	
@@ -227,7 +233,7 @@ public class WorkerHandle
 		for (Integer i : this.jobsInProcess.values())
 			bs += i;
 		
-		return this.workerSocket.getInetAddress().getHostAddress() + ": " + this.jobsInProcess.size() + " jobs, " + bs + " bytes";
+		return this.workerSocket.getInetAddress().getHostAddress() + "x" + this.handshake.cores + ": " + this.jobsInProcess.size() + " jobs, " + bs + " bytes";
 	}
 }
 
