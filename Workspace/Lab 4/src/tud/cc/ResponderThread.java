@@ -37,13 +37,15 @@ public class ResponderThread
 				try
 				{
 					Task task = processed.take();
-					task.served();
 					
 					UUID requestUuid = task.getRequestUuid();
 					Request response = new Request(requestUuid, task.getImage());
 					
 					ClientHandle handle = requestMap.get(requestUuid);
 					handle.sendResponse(response);
+					
+					task.served();
+					System.out.println(getName() + " job completed " + task);
 				}
 				catch (IOException e) 
 				{

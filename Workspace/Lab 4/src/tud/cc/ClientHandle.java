@@ -88,7 +88,7 @@ public class ClientHandle
 		if (response == null)
 			throw new NullPointerException("Response cannot be null");
 		
-		System.out.println(getName() + " sending response to " + connection.socket.getInetAddress().getHostAddress());
+		//System.out.println(getName() + " sending response to " + connection.socket.getInetAddress().getHostAddress());
 		requestMap.remove(response.getId());
 		
 		this.connection.send(response);

@@ -103,7 +103,7 @@ public class WorkerHandle
 			{
 				// Read processed jobs from worker
 				Task job = (Task) in.readObject();
-				System.out.println(getName() + ": received from worker: " + job.getImage().length + "b");
+				//System.out.println(getName() + ": received from worker: " + job.getImage().length + "b");
 				job.processed();
 				this.jobsInProcess.remove(job.getUuid());
 				
@@ -149,7 +149,7 @@ public class WorkerHandle
 		if (this.isStarve())
 			throw new IllegalAccessException("Worker cannot accept jobs while starving");
 		
-		System.out.println(Thread.currentThread().getName() +  " sending job to " + workerSocket.getInetAddress().getHostAddress());
+		//System.out.println(Thread.currentThread().getName() +  " sending job to " + workerSocket.getInetAddress().getHostAddress());
 
 		this.jobsInProcess.put(job.getUuid(), job.getImage().length);
 		
