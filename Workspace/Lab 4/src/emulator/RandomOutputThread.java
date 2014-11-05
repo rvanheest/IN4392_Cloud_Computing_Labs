@@ -1,30 +1,27 @@
 package emulator;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
-import javax.imageio.ImageIO;
-
 import tud.cc.Utils;
 import data.Request;
 
-class RandomOutputThread extends Thread {
+public class RandomOutputThread extends Thread {
 
 	private final ObjectOutputStream out;
 	private final ConcurrentMap<UUID, Long> sendTimes;
-	private final ArrayList<BufferedImage> images;
+	private final List<BufferedImage> images;
 	private final Random random = new Random();
 	private int num;
-	private long timeToSleep;
+	private final long timeToSleep;
 
 	public RandomOutputThread(ObjectOutputStream out,
 			ConcurrentMap<UUID, Long> sendTimes, int num, long timeToSleep,
-			ArrayList<BufferedImage> images) {
+			List<BufferedImage> images) {
 		this.out = out;
 		this.sendTimes = sendTimes;
 		this.num = num;
@@ -44,7 +41,9 @@ class RandomOutputThread extends Thread {
 				Request request = new Request(uuid, bytesToBeSend);
 
 				System.out.println("EMULATOR_OUTPUT - sending image: " + request);
-				this.out.writeObject(request);
+				synchronized (this.out) {
+					this.out.writeObject(request);
+				}
 
 				long t1 = System.currentTimeMillis();
 				this.sendTimes.put(uuid, t1);

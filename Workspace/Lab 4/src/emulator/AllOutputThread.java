@@ -1,27 +1,23 @@
 package emulator;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
-
-import javax.imageio.ImageIO;
 
 import tud.cc.Utils;
 import data.Request;
 
-class AllOutputThread extends Thread {
+public class AllOutputThread extends Thread {
 
 	private final ObjectOutputStream out;
 	private final ConcurrentMap<UUID, Long> sendTimes;
-	private final ArrayList<BufferedImage> images;
-	private long timeToSleep;
+	private final Iterable<BufferedImage> images;
+	private final long timeToSleep;
 
 	public AllOutputThread(ObjectOutputStream out,
 			ConcurrentMap<UUID, Long> sendTimes, long timeToSleep,
-			ArrayList<BufferedImage> images) {
+			Iterable<BufferedImage> images) {
 		this.out = out;
 		this.sendTimes = sendTimes;
 		this.timeToSleep = timeToSleep;
