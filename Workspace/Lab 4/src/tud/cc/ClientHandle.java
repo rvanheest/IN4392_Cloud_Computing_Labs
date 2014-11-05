@@ -51,8 +51,8 @@ public class ClientHandle
     			Task task = new Task(request.getId(), request.getImage());
     			requestMap.put(request.getId(), this);
     			
+    			task.queued();
     			jobQueue.add(task);
-    			task.queued();	
 			}
 		}
 		catch (IOException e)
