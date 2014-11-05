@@ -134,6 +134,7 @@ public class HeadNode
 					switch (command)
 					{
 						case "workers":
+						case "w":
 							for (Entry<String, WorkerHandle> entry : workerPool.entrySet())
 //								System.out.println(inet);
 								System.out.println(entry.getValue());
@@ -143,12 +144,16 @@ public class HeadNode
 								System.out.println(details);
 							break;
 						case "queue":
+						case "q":
 							for (Task job : jobQueue)
 								System.out.println(job);
 							break;
 						case "processed":
 							for (Task job : processed)
 								System.out.println(job);
+							break;
+						case "workload":
+							System.out.println(this.takeSample().getWorkload());
 							break;
 						case "lease":
 							System.out.println("Leasing a new worker...");
@@ -231,10 +236,21 @@ public class HeadNode
 	public Sample takeSample()
 	{
 		Task queueHead = jobQueue.peek();
+		
+		int cores = 0;
+		int jobsInWorkers = 0;
+		for (WorkerHandle worker : this.workerPool.values())
+		{
+			cores += worker.handshake.cores;
+			jobsInWorkers += worker.getJobsInProcess().size();
+		}
+		
 		return new Sample
 		(
 				jobQueue.size(),
-				(queueHead != null) ? System.currentTimeMillis() - queueHead.getTimeQueued() : 0
+				(queueHead != null) ? System.currentTimeMillis() - queueHead.getTimeQueued() : 0,
+				cores,
+				jobsInWorkers
 		);
 	}
 	

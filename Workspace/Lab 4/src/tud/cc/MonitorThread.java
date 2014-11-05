@@ -69,10 +69,16 @@ public class MonitorThread
 			if (worker.getJobsInProcess().size() < 4)
 				cond3 = false;
 		
+		// Condition 4: workload over 80%
+		boolean cond4 = true;
+		cond4 = samples.get(samples.size()-1).getWorkload() > 0.8;
+		
+		
 		return new Boolean[] {
 				cond1,
 				cond2,
-				cond3
+				cond3,
+				cond4
 		};
 	}
 	
@@ -94,11 +100,15 @@ public class MonitorThread
 		if (idle >= 3)
 			cond1 = true;
 		
-		// Condition 2:
-		// ...
+		// Condition 2: Workload below 50% (more than 2 workers)
+		boolean cond2 = false;
+		cond2 = samples.get(samples.size()-1).getWorkload() < 0.5
+				&& workers.size() > 2;
+		
 		
 		return new Boolean[] {
-				cond1
+				cond1,
+				cond2
 		};
 	}
 	
