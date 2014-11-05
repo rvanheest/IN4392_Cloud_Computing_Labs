@@ -14,6 +14,9 @@ public class WorkerHandshake
 {
 	private static final long serialVersionUID = -8896882167017437484L;
 	
+	/**
+	 * The number of cores available to this worker
+	 */
 	public final int cores;
 	
 	public WorkerHandshake(int cores)

@@ -49,7 +49,7 @@ public class SchedulerThread
 						sleep(5000);
 					}
 					
-					Collection<WorkerHandle> eligibleWorkers = getEligibleWorkers(workerPool.values(), 4);
+					Collection<WorkerHandle> eligibleWorkers = getEligibleWorkers(workerPool.values());
 					if (eligibleWorkers.size() == 0 && workerPool.size() > 0 )
 					{	// If every worker is full, wait and try again
 						if (!delayedScheduling)
@@ -66,11 +66,11 @@ public class SchedulerThread
 					
 					// Re-determine eligible workers
 					// We might have more,, but not fewer than before dequeuing the job
-					eligibleWorkers = getEligibleWorkers(workerPool.values(), 4);
+					eligibleWorkers = getEligibleWorkers(workerPool.values());
 					
 					// Take more jobs to schedule at once
-					// Don't take more than two per worker
-					while (tasks.size() < eligibleWorkers.size()*2)
+					// Don't take more than one per worker
+					while (tasks.size() < eligibleWorkers.size())
 					{
 						Task nextTask = jobQueue.poll();
 						if (nextTask == null)
@@ -122,12 +122,12 @@ public class SchedulerThread
 	 * @param allWorkers The original collection of workers.
 	 * @return The filtered collection.
 	 */
-	private Collection<WorkerHandle> getEligibleWorkers(Collection<WorkerHandle> allWorkers, int threhold)
+	private Collection<WorkerHandle> getEligibleWorkers(Collection<WorkerHandle> allWorkers)
 	{
 		ArrayList<WorkerHandle> filtered = new ArrayList<WorkerHandle>(allWorkers.size());
 		for (WorkerHandle handle : allWorkers)
 			if (!handle.isStarve()) // If not marked for decommission
-				if (handle.getJobsInProcess().size() < threhold) // If not full
+				if (handle.getJobsInProcess().size() <= handle.handshake.cores*2) // If not full
 					filtered.add(handle);
 		return filtered;
 	}

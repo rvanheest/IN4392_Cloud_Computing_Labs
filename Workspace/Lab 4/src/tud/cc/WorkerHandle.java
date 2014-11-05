@@ -32,7 +32,7 @@ public class WorkerHandle
 	 */
 	private boolean decommision = false;
 	
-	public final WorkerHandshake handshake;
+	public  final WorkerHandshake handshake;
 	private final NodeDetails nodeDetails;
 	private final Socket workerSocket;
 	private final ObjectInputStream in;
