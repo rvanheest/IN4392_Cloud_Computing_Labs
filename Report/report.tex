@@ -87,6 +87,18 @@ This report is structured as follows: first we will discuss the background of th
 \label{sec:background}
 \textcolor{red}{0.5 page: describe application (1 paragraph) + requirements (1-3 paragraphs)}
 
+The application we build over the course of several weeks is a prototype of a more generic cloud centered solution where tasks come in at the head node and are distributed over a number of worker nodes. In this particular application we choose to take image processing as the workload. Images that are received by an arbitrary worker are modified by applying a number of operations, combining them afterwards. Notice that this approach has a high potential for the task being split into subtasks and make it into a MapReduce process. However, to make things not overly complicated in this prototype, we consider one image as one \textit{undividable} task, which is executed on a single node.
+
+The requirements of our application can be split up into 5 tiers. First of all, the application needs to run without human intervention as much as possible. We fulfilled this requirement by only having to start the head node application and providing images over the course of the runtime. Besides these 2 acts, the head node automatically decides when to lease and release worker nodes, to which worker an incoming task is sent and to where a completed task needs to be returned. On the other hand, the worker nodes automatically receive tasks, process them as soon as they possible can and make sure they send back the result to the head node.
+
+A second tier holds the elasticity of the system, which is determined by the head node. Elasticity in the context of cloud computing describes to which degree the system is able to grow and shrink its number of resources. In this case, these resources are the worker nodes, which can be leased or released. When the system gets overloaded with tasks, it might be a good idea to lease more workers. On the other hand, when there are hardly any tasks in the system, it is useless to have a large number of idle workers, since they are being payed for all that time. Ideally you want to predict when the system will have a peak moment in the number of tasks and when it will get more quiet. For this, machine learning is a nice path to follow. This however is not part of this project.
+
+Besides elasticity, load balancing is another topic of interest in cloud computing. When the head node receives a task, it needs to decide where it should be executed. Does it prefer certain workers, will it be assigned randomly or is there a better way to schedule a task. In this the head node might look at the size of the task, the length of the queue of each available worker or any other measurable property of the task and the workers.
+
+The fourth tier is the reliability of the system. As the application is mostly autonomous, it also needs to be able to recover from failure. A failure might be losing connection between the head node and one or more workers, crashing the head or a worker, IO failure, etc. For this project we make the assumption that the head node never crashes and \textcolor{red}{complete this when we implemented this}.
+
+Finally, a system isn't a good system without a monitoring module. To make decisions in the other tiers (especially elasticity and load balancing), we need to supply it with proper data, for example the length of each worker's queue, the number of incoming tasks in the system, etc. Also for the research part of this project the monitoring module is used. This is used to gain the results in \cref{sec:experiments}.
+
 \section{System Design}
 \label{sec:design}
 \textcolor{red}{1.5 pages}
