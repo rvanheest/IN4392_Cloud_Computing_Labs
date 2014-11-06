@@ -1,14 +1,16 @@
 package tud.cc;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.BlockingDeque;
 
 import scheduler.QueueLengthScheduler;
-import scheduler.RandomScheduler;
 import scheduler.Scheduler;
-import scheduler.SchedulerException;
+import scheduler.SchedulerResponse;
 import data.Task;
 
 public class SchedulerThread
@@ -18,11 +20,11 @@ public class SchedulerThread
 	
 	private final Scheduler scheduler = new QueueLengthScheduler(2);
 	
-	private final BlockingQueue<Task> jobQueue;
+	private final BlockingDeque<Task> jobQueue;
 	private final Map<String, WorkerHandle> workerPool;
 	
 	
-	public SchedulerThread(BlockingQueue<Task> jobQueue, Map<String, WorkerHandle> workerPool)
+	public SchedulerThread(BlockingDeque<Task> jobQueue, Map<String, WorkerHandle> workerPool)
 	{
 		super("Scheduler");
 		this.jobQueue = jobQueue;
@@ -79,11 +81,17 @@ public class SchedulerThread
 					}
 					
 					// Schedule
-					Map<Task, WorkerHandle> mapping = scheduler.schedule(tasks, eligibleWorkers);
+					SchedulerResponse response = scheduler.schedule(tasks, eligibleWorkers);
+					
+					List<Task> reject = response.getReject();
+					int size = reject.size();
+					for (int i = size - 1; i >= 0; i--) {
+						this.jobQueue.putFirst(reject.get(i));
+					}
 					
 					// Send to worker
 					int scheduled = 0;
-					for (Entry<Task, WorkerHandle> entry : mapping.entrySet())
+					for (Entry<Task, WorkerHandle> entry : response.getAccept().entrySet())
 					{
 						Task task = entry.getKey();
 						WorkerHandle handle = entry.getValue();
@@ -96,14 +104,14 @@ public class SchedulerThread
 						catch (IllegalAccessException e) 
 						{
 							// Job was rejected. Re-queue job
-							jobQueue.add(task);
+							jobQueue.putLast(task);
 							// Print error; This error should not occur.
 							e.printStackTrace();
 						}
 					}
 					System.out.println(getName() + " scheduled " + scheduled + " jobs.");
 				}
-				catch (SchedulerException | IOException e)
+				catch (IOException e)
 				{
 					e.printStackTrace();
 				}

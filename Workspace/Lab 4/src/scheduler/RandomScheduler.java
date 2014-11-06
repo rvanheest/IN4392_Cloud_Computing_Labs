@@ -1,5 +1,6 @@
 package scheduler;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -23,12 +24,11 @@ public class RandomScheduler implements Scheduler {
 	}
 
 	@Override
-	public Map<Task, WorkerHandle> schedule(List<Task> tasks, Collection<WorkerHandle> workers)
-			throws SchedulerException {
+	public SchedulerResponse schedule(List<Task> tasks, Collection<WorkerHandle> workers) {
 		Map<Task, WorkerHandle> result = new HashMap<>();
 
 		if (workers.isEmpty()) {
-			throw new SchedulerException("The set of WorkerHandles was empty");
+			return new SchedulerResponse(result, new ArrayList<>(tasks));
 		}
 		else {
 			WorkerHandle[] array = workers.toArray(new WorkerHandle[0]);
@@ -39,6 +39,6 @@ public class RandomScheduler implements Scheduler {
 			}
 		}
 
-		return result;
+		return new SchedulerResponse(result);
 	}
 }

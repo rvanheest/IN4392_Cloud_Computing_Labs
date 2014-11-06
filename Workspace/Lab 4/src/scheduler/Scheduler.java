@@ -2,7 +2,6 @@ package scheduler;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import tud.cc.WorkerHandle;
 import data.Task;
@@ -15,6 +14,5 @@ import data.Task;
  */
 public interface Scheduler {
 
-	Map<Task, WorkerHandle> schedule(List<Task> tasks, Collection<WorkerHandle> workers)
-			throws SchedulerException;
+	SchedulerResponse schedule(List<Task> tasks, Collection<WorkerHandle> workers);
 }
