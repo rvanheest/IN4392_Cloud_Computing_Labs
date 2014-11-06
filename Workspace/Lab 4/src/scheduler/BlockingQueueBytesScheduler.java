@@ -40,13 +40,13 @@ public class BlockingQueueBytesScheduler implements Scheduler {
 				if (!bestFull && result.size() < size) {
     				WorkerHandleWrapper worker = workersQueue.poll();
     				if (worker.px <= 630 * 10_000) {
+    					result.put(task, worker.getWorker());
+        				workersQueue.add(worker.incrementQueueLength(task.getPixelCount()));
+    				}
+    				else {
     					bestFull = true;
     					reject.add(task);
     					workersQueue.add(worker);
-    				}
-    				else {
-        				result.put(task, worker.getWorker());
-        				workersQueue.add(worker.incrementQueueLength(task.getPixelCount()));
     				}
     				result.put(task, worker.getWorker());
     				workersQueue.add(worker.incrementQueueLength(task.getImageSize()));
