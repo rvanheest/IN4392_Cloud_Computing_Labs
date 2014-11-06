@@ -27,10 +27,17 @@ public class Worker implements AutoCloseable {
 	private final ArrayList<ProcessingThread> processes = new ArrayList<ProcessingThread>();
 
 	public Worker(String head) throws UnknownHostException, IOException {
+		// Establish connection
 		this.socket = new Socket(InetAddress.getByName(head), HeadNode.HeadWorkerPort);
 		this.out = new ObjectOutputStream(this.socket.getOutputStream());
 		this.in = new ObjectInputStream(this.socket.getInputStream());
 
+		// Greet
+		this.out.writeObject(new WorkerHandshake(
+			Runtime.getRuntime().availableProcessors()
+		));
+		
+		// Set up processing belt
 		this.input = new InputThread(in, inputQueue);
 		this.output = new OutputThread(out, outputQueue);
 

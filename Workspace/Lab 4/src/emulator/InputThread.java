@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentMap;
 import data.Request;
 import data.Timing;
 
-class InputThread extends Thread {
+public class InputThread extends Thread {
 
 	private final ObjectInputStream in;
 	private final ConcurrentMap<UUID, Long> sendTimes;

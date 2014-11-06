@@ -11,6 +11,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,6 +28,7 @@ import javax.imageio.ImageIO;
 
 import tud.cc.HeadNode;
 import data.Timing;
+import emulator.experiments.ExperimentSetups;
 
 public class Emulator implements AutoCloseable {
 
@@ -37,23 +39,20 @@ public class Emulator implements AutoCloseable {
 	private final ConcurrentMap<UUID, Long> sendTimes = new ConcurrentHashMap<>();
 	private final BlockingQueue<Timing> completionTimes = new LinkedBlockingQueue<Timing>();
 
-	private final ArrayList<BufferedImage> images = new ArrayList<>(); 
-	
+	private final List<BufferedImage> images = new ArrayList<>();
+
 	private final InputThread input;
 	private final LoggingThread logging;
 
-	private final File directory;
 	private final Logger logger = Logger.getLogger("emulator");
 
 	public Emulator(String head, File dir) throws UnknownHostException, IOException {
 		this.socket = new Socket(InetAddress.getByName(head), HeadNode.HeadClientPort);
 		this.out = new ObjectOutputStream(this.socket.getOutputStream());
 		this.in = new ObjectInputStream(this.socket.getInputStream());
-		
+
 		this.input = new InputThread(this.in, this.sendTimes, this.completionTimes);
 		this.logging = new LoggingThread(this.completionTimes, this.logger);
-
-		this.directory = dir;
 
 		this.initLogger();
 		this.bufferImages(dir);
@@ -76,7 +75,7 @@ public class Emulator implements AutoCloseable {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private void bufferImages(File imageDirectory) throws IOException {
 		System.out.println("Preloading images");
 		File[] imageFiles = imageDirectory.listFiles();
@@ -113,8 +112,8 @@ public class Emulator implements AutoCloseable {
 									+ "two images (in milliseconds)?");
 							int timeToSleep = Integer.parseInt(consoleInput.readLine().trim());
 
-							new RandomOutputThread(this.out, this.sendTimes,
-									num, timeToSleep, this.images).start();
+							new RandomOutputThread(this.out, this.sendTimes, num, timeToSleep,
+									this.images).start();
 						}
 						catch (NumberFormatException e) {
 							System.err.println("a number was not formatted correctly");
@@ -128,6 +127,24 @@ public class Emulator implements AutoCloseable {
 
 							new AllOutputThread(this.out, this.sendTimes, sleepTime, this.images)
 									.start();
+						}
+						catch (NumberFormatException e) {
+							System.err.println("a number was not formatted correctly");
+						}
+						break;
+					case "experiment":
+						try {
+							System.out.println("Which experiment do you want? [1]");
+							int experiment = Integer.parseInt(consoleInput.readLine().trim());
+
+							switch (experiment) {
+								case 1:
+									new ExperimentOutputThread(ExperimentSetups.experiment1(
+											this.out, this.sendTimes, this.images)).start();
+									break;
+								default:
+									System.out.println("experiment is not found");
+							}
 						}
 						catch (NumberFormatException e) {
 							System.err.println("a number was not formatted correctly");

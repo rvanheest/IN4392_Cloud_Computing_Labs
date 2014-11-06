@@ -29,7 +29,8 @@ public class Task
 		this.image = image;
 	}
 
-	public Task(Task t, byte[] newImage) {
+	public Task(Task t, byte[] newImage) 
+	{
 		this.uuid = t.uuid;
 		this.requestUuid = t.requestUuid;
 		
@@ -77,6 +78,10 @@ public class Task
 
 	public byte[] getImage() {
 		return image;
+	}
+	
+	public int getImageSize() {
+		return this.getImage().length;
 	}
 
 	public void queued()
@@ -153,12 +158,20 @@ public class Task
 	
 	
 	@Override
-	public String toString() {
-		return "[Job: " + this.uuid + ": " + this.image.length + "b]";
+	public String toString() 
+	{
+		long[] steps = this.cumulativeStepsInHead();
+		return "[Job: " + this.uuid + ": " + this.image.length + "b: " 
+				+ steps[0] + ", "
+				+ steps[1] + ", "
+				+ steps[2] + ", "
+				+ steps[3] + ", "
+		+ "]";
 	}
 	
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(Object obj) 
+	{
 		if (obj instanceof Task)
 		{
 			Task other = (Task) obj;
@@ -168,7 +181,8 @@ public class Task
 	}
 	
 	@Override
-	public int hashCode() {
+	public int hashCode() 
+	{
 		return this.uuid.hashCode();
 	}
 }

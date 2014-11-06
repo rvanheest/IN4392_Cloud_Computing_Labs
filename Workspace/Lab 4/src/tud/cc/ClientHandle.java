@@ -43,7 +43,7 @@ public class ClientHandle
 			{
 				// Get request
 				Request request = connection.receive();
-    			System.out.println(getName() + " received request " + request.getImage().length + "b");
+    			//System.out.println(getName() + " received request " + request.getImage().length + "b");
 
     			// TODO Image backup
     			
@@ -51,8 +51,8 @@ public class ClientHandle
     			Task task = new Task(request.getId(), request.getImage());
     			requestMap.put(request.getId(), this);
     			
+    			task.queued();
     			jobQueue.add(task);
-    			task.queued();	
 			}
 		}
 		catch (IOException e)
@@ -88,7 +88,7 @@ public class ClientHandle
 		if (response == null)
 			throw new NullPointerException("Response cannot be null");
 		
-		System.out.println(getName() + " sending response to " + connection.socket.getInetAddress().getHostAddress());
+		//System.out.println(getName() + " sending response to " + connection.socket.getInetAddress().getHostAddress());
 		requestMap.remove(response.getId());
 		
 		this.connection.send(response);

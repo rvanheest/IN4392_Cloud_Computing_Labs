@@ -4,11 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.Collections;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
@@ -26,65 +22,6 @@ import amazonTests.NodeDetails;
 import data.Sample;
 import data.Task;
 import emulator.Emulator;
-
-
-class Connection
-	implements AutoCloseable
-{
-	public final Socket socket;
-	public final ObjectOutputStream out;
-	public final ObjectInputStream in;
-	
-	public Connection(Socket socket) throws IOException
-	{
-		this.socket = socket;
-		this.in = new ObjectInputStream(socket.getInputStream());
-		this.out = new ObjectOutputStream(socket.getOutputStream());
-	}
-
-	@Override
-	public void close() throws Exception 
-	{
-		this.in.close();
-		this.out.close();
-		this.socket.close();
-	}
-	
-	public void send(Object o) throws IOException
-	{
-		synchronized (out)
-		{
-			out.writeObject(o);
-		}
-	}
-	
-	public <T> T receive() throws ClassNotFoundException, IOException
-	{
-		synchronized (in)
-		{
-			T readObject = (T) this.in.readObject();
-			return readObject;
-		}
-	}
-	
-	@Override
-	public int hashCode() 
-	{
-		return Objects.hash(socket, out, in);
-	}
-	
-	@Override
-	public boolean equals(Object obj) 
-	{
-		if (obj instanceof Connection)
-		{
-			Connection other = (Connection) obj;
-			return this.socket.equals(other.socket);
-		}
-		return false;
-	}
-}
-
 
 
 public class HeadNode 
@@ -197,8 +134,8 @@ public class HeadNode
 					switch (command)
 					{
 						case "workers":
+						case "w":
 							for (Entry<String, WorkerHandle> entry : workerPool.entrySet())
-//								System.out.println(inet);
 								System.out.println(entry.getValue());
 							break;
 						case "worker-details":
@@ -206,12 +143,16 @@ public class HeadNode
 								System.out.println(details);
 							break;
 						case "queue":
+						case "q":
 							for (Task job : jobQueue)
 								System.out.println(job);
 							break;
 						case "processed":
 							for (Task job : processed)
 								System.out.println(job);
+							break;
+						case "workload":
+							System.out.println(this.takeSample().getWorkload());
 							break;
 						case "lease":
 							System.out.println("Leasing a new worker...");
@@ -294,10 +235,22 @@ public class HeadNode
 	public Sample takeSample()
 	{
 		Task queueHead = jobQueue.peek();
+		
+		int cores = 0;
+		int jobsInWorkers = 0;
+		for (WorkerHandle worker : this.workerPool.values())
+		{
+			cores += worker.handshake.cores;
+			jobsInWorkers += worker.getJobsInProcess().size();
+		}
+		
 		return new Sample
 		(
 				jobQueue.size(),
-				(queueHead != null) ? System.currentTimeMillis() - queueHead.getTimeQueued() : 0
+				(queueHead != null) ? System.currentTimeMillis() - queueHead.getTimeQueued() : 0,
+				cores,
+				workerPool.size(),
+				jobsInWorkers
 		);
 	}
 	
