@@ -8,13 +8,15 @@ public class Sample
 	public final int queueSize;
 	public final long schedulingDelay;
 	public final int coresLeased;
+	public final int workersLeased;
 	public final int jobsInWorkers;
 	
-	public Sample(int queueSize, long schedulingDelay, int coresLeased, int jobsInWorkers)
+	public Sample(int queueSize, long schedulingDelay, int coresLeased, int workersLeased, int jobsInWorkers)
 	{
 		this.queueSize = queueSize;
 		this.schedulingDelay = schedulingDelay;
 		this.coresLeased = coresLeased;
+		this.workersLeased = workersLeased;
 		this.jobsInWorkers = jobsInWorkers;
 	}
 	
@@ -30,6 +32,7 @@ public class Sample
 				+ "\tQueue: " + this.queueSize + "\n"
 				+ "\tScheduling delay: " + this.schedulingDelay + "\n"
 				+ "\tCores total: " + this.coresLeased + "\n"
+				+ "\tWorkers total: " + this.workersLeased + "\n"
 				+ "\tJobs in workers: " + this.jobsInWorkers + "";
 	}
 }

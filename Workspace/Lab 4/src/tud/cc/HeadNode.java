@@ -136,7 +136,6 @@ public class HeadNode
 						case "workers":
 						case "w":
 							for (Entry<String, WorkerHandle> entry : workerPool.entrySet())
-//								System.out.println(inet);
 								System.out.println(entry.getValue());
 							break;
 						case "worker-details":
@@ -250,6 +249,7 @@ public class HeadNode
 				jobQueue.size(),
 				(queueHead != null) ? System.currentTimeMillis() - queueHead.getTimeQueued() : 0,
 				cores,
+				workerPool.size(),
 				jobsInWorkers
 		);
 	}
