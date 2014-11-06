@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.BlockingDeque;
 
-import scheduler.QueueLengthScheduler;
+import scheduler.BlockingQueueLengthScheduler;
 import scheduler.Scheduler;
 import scheduler.SchedulerResponse;
 import data.Task;
@@ -18,7 +18,7 @@ public class SchedulerThread
 {
 	private boolean closing;
 	
-	private final Scheduler scheduler = new QueueLengthScheduler(2);
+	private final Scheduler scheduler = new BlockingQueueLengthScheduler();
 	
 	private final BlockingDeque<Task> jobQueue;
 	private final Map<String, WorkerHandle> workerPool;
@@ -39,10 +39,9 @@ public class SchedulerThread
 		
 		try
 		{
-			boolean delayedScheduling = false;
-			
 			while (!closing)
 			{
+				sleep(1000);
 				try
 				{
 					// Wait for first worker
@@ -51,37 +50,12 @@ public class SchedulerThread
 						sleep(5000);
 					}
 					
-					Collection<WorkerHandle> eligibleWorkers = getEligibleWorkers(workerPool.values());
-					if (eligibleWorkers.size() == 0 && workerPool.size() > 0 )
-					{	// If every worker is full, wait and try again
-						if (!delayedScheduling)
-							System.out.println(getName() + " system overwhelmed. Delaying scheduling");
-						delayedScheduling = true;
-						sleep(1000);
-						continue;
-					}
-					delayedScheduling = false;
-					
-					// Take a job from the queue
-					ArrayList<Task> tasks = new ArrayList<>();
+					Collection<WorkerHandle> eligibleWorkers = this.getEligibleWorkers(workerPool.values());
+					List<Task> tasks = new ArrayList<>();
 					tasks.add(jobQueue.take());
+					this.jobQueue.drainTo(tasks);
 					
-					// Re-determine eligible workers
-					// We might have more,, but not fewer than before dequeuing the job
-					eligibleWorkers = getEligibleWorkers(workerPool.values());
-					
-					// Take more jobs to schedule at once
-					// Don't take more than one per worker
-					while (tasks.size() < eligibleWorkers.size())
-					{
-						Task nextTask = jobQueue.poll();
-						if (nextTask == null)
-							break;
-						tasks.add(nextTask);
-					}
-					
-					// Schedule
-					SchedulerResponse response = scheduler.schedule(tasks, eligibleWorkers);
+					SchedulerResponse response = this.scheduler.schedule(tasks, eligibleWorkers);
 					
 					List<Task> reject = response.getReject();
 					int size = reject.size();
@@ -135,7 +109,6 @@ public class SchedulerThread
 		ArrayList<WorkerHandle> filtered = new ArrayList<WorkerHandle>(allWorkers.size());
 		for (WorkerHandle handle : allWorkers)
 			if (!handle.isStarve()) // If not marked for decommission
-				if (handle.getJobsInProcess().size() <= handle.handshake.cores*2) // If not full
 					filtered.add(handle);
 		return filtered;
 	}
