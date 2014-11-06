@@ -64,7 +64,6 @@ public class SchedulerThread
 					}
 					
 					// Send to worker
-					int scheduled = 0;
 					for (Entry<Task, WorkerHandle> entry : response.getAccept().entrySet())
 					{
 						Task task = entry.getKey();
@@ -73,7 +72,6 @@ public class SchedulerThread
 						try 
 						{
 							handle.sendJob(task);
-							scheduled++;
 						} 
 						catch (IllegalAccessException e) 
 						{
@@ -83,7 +81,7 @@ public class SchedulerThread
 							e.printStackTrace();
 						}
 					}
-					System.out.println(getName() + " scheduled " + scheduled + " jobs.");
+					System.out.println(getName() + " scheduled " + response.getAccept().size() + "/" + tasks.size() + " jobs.");
 				}
 				catch (IOException e)
 				{
