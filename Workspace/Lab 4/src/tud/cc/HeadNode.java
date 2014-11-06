@@ -165,7 +165,7 @@ public class HeadNode
 						case "workload":
 							Sample lastSample = this.monitorThread.getHistory(1).get(0);
 							System.out.println("Workload: " + lastSample.getWorkload()
-												+ " - Processed: " + lastSample.getWorkload());
+												+ " - Processed: " + lastSample.getProcessedWorkload());
 							break;
 						case "lease":
 							System.out.println("Leasing a new worker...");

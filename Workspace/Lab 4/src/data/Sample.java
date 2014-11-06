@@ -43,6 +43,8 @@ public class Sample
 	
 	public double getWorkload()
 	{
+		if (coresLeased == 0)
+			return 0;
 		return ((double)(jobsInWorkers + queueSize)) / coresLeased;
 	}
 	

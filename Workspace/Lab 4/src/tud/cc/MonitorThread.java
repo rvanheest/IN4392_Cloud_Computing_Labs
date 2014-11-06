@@ -205,7 +205,10 @@ public class MonitorThread
 	private void sampleState() throws FileNotFoundException, UnsupportedEncodingException 
 	{
 		Sample nextSample = headNode.takeSample();
-		nextSample.setProcessedWorkload(0.8*samples.getLast().getProcessedWorkload() + 0.2*nextSample.getWorkload());
+		if (samples.size() > 0)
+			nextSample.setProcessedWorkload(0.8*samples.getLast().getProcessedWorkload() + 0.2*nextSample.getWorkload());
+		else
+			nextSample.setProcessedWorkload(nextSample.getWorkload());
 		this.samples.add(nextSample);
 		CSVWriter.getSamples().writeLine(nextSample.toParts());
 	}
