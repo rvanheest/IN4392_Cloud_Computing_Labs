@@ -11,17 +11,23 @@ import java.util.PriorityQueue;
 import tud.cc.WorkerHandle;
 import data.Task;
 
-public class QueueLengthScheduler implements Scheduler {
+public class BlockingQueueLengthScheduler implements Scheduler {
 
 	@Override
 	public SchedulerResponse schedule(List<Task> tasks, Collection<WorkerHandle> workers) {
 		Map<Task, WorkerHandle> result = new HashMap<>();
+		List<Task> reject = new ArrayList<>();
 
 		if (workers.isEmpty()) {
 			return new SchedulerResponse(result, new ArrayList<>(tasks));
 		}
+		else if (tasks.isEmpty()) {
+			return new SchedulerResponse(result);
+		}
 		else {
-			PriorityQueue<WorkerHandleWrapper> workersQueue = new PriorityQueue<>(workers.size(),
+			int size = workers.size();
+			
+			PriorityQueue<WorkerHandleWrapper> workersQueue = new PriorityQueue<>(size,
 					new QueueLengthComparator());
 
 			for (WorkerHandle worker : workers) {
@@ -29,13 +35,18 @@ public class QueueLengthScheduler implements Scheduler {
 			}
 
 			for (Task task : tasks) {
-				WorkerHandleWrapper worker = workersQueue.poll();
-				result.put(task, worker.getWorker());
-				workersQueue.add(worker.incrementQueueLength());
+				if (result.size() < size) {
+    				WorkerHandleWrapper worker = workersQueue.poll();
+    				result.put(task, worker.getWorker());
+    				workersQueue.add(worker.incrementQueueLength());
+				}
+				else {
+					reject.add(task);
+				}
 			}
+			
+			return new SchedulerResponse(result, reject);
 		}
-
-		return new SchedulerResponse(result);
 	}
 
 	private class WorkerHandleWrapper {

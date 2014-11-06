@@ -1,14 +1,16 @@
 package tud.cc;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.BlockingDeque;
 
-import scheduler.QueueLengthScheduler;
-import scheduler.RandomScheduler;
+import scheduler.BlockingQueueLengthScheduler;
 import scheduler.Scheduler;
-import scheduler.SchedulerException;
+import scheduler.SchedulerResponse;
 import data.Task;
 
 public class SchedulerThread
@@ -16,13 +18,13 @@ public class SchedulerThread
 {
 	private boolean closing;
 	
-	private final Scheduler scheduler = new QueueLengthScheduler(2);
+	private final Scheduler scheduler = new BlockingQueueLengthScheduler();
 	
-	private final BlockingQueue<Task> jobQueue;
+	private final BlockingDeque<Task> jobQueue;
 	private final Map<String, WorkerHandle> workerPool;
 	
 	
-	public SchedulerThread(BlockingQueue<Task> jobQueue, Map<String, WorkerHandle> workerPool)
+	public SchedulerThread(BlockingDeque<Task> jobQueue, Map<String, WorkerHandle> workerPool)
 	{
 		super("Scheduler");
 		this.jobQueue = jobQueue;
@@ -37,10 +39,9 @@ public class SchedulerThread
 		
 		try
 		{
-			boolean delayedScheduling = false;
-			
 			while (!closing)
 			{
+				sleep(1000);
 				try
 				{
 					// Wait for first worker
@@ -49,41 +50,22 @@ public class SchedulerThread
 						sleep(5000);
 					}
 					
-					Collection<WorkerHandle> eligibleWorkers = getEligibleWorkers(workerPool.values());
-					if (eligibleWorkers.size() == 0 && workerPool.size() > 0 )
-					{	// If every worker is full, wait and try again
-						if (!delayedScheduling)
-							System.out.println(getName() + " system overwhelmed. Delaying scheduling");
-						delayedScheduling = true;
-						sleep(1000);
-						continue;
-					}
-					delayedScheduling = false;
-					
-					// Take a job from the queue
-					ArrayList<Task> tasks = new ArrayList<>();
+					Collection<WorkerHandle> eligibleWorkers = this.getEligibleWorkers(workerPool.values());
+					List<Task> tasks = new ArrayList<>();
 					tasks.add(jobQueue.take());
+					this.jobQueue.drainTo(tasks);
 					
-					// Re-determine eligible workers
-					// We might have more,, but not fewer than before dequeuing the job
-					eligibleWorkers = getEligibleWorkers(workerPool.values());
+					SchedulerResponse response = this.scheduler.schedule(tasks, eligibleWorkers);
 					
-					// Take more jobs to schedule at once
-					// Don't take more than one per worker
-					while (tasks.size() < eligibleWorkers.size())
-					{
-						Task nextTask = jobQueue.poll();
-						if (nextTask == null)
-							break;
-						tasks.add(nextTask);
+					List<Task> reject = response.getReject();
+					int size = reject.size();
+					for (int i = size - 1; i >= 0; i--) {
+						this.jobQueue.putFirst(reject.get(i));
 					}
-					
-					// Schedule
-					Map<Task, WorkerHandle> mapping = scheduler.schedule(tasks, eligibleWorkers);
 					
 					// Send to worker
 					int scheduled = 0;
-					for (Entry<Task, WorkerHandle> entry : mapping.entrySet())
+					for (Entry<Task, WorkerHandle> entry : response.getAccept().entrySet())
 					{
 						Task task = entry.getKey();
 						WorkerHandle handle = entry.getValue();
@@ -96,14 +78,14 @@ public class SchedulerThread
 						catch (IllegalAccessException e) 
 						{
 							// Job was rejected. Re-queue job
-							jobQueue.add(task);
+							jobQueue.putLast(task);
 							// Print error; This error should not occur.
 							e.printStackTrace();
 						}
 					}
 					System.out.println(getName() + " scheduled " + scheduled + " jobs.");
 				}
-				catch (SchedulerException | IOException e)
+				catch (IOException e)
 				{
 					e.printStackTrace();
 				}
@@ -127,7 +109,6 @@ public class SchedulerThread
 		ArrayList<WorkerHandle> filtered = new ArrayList<WorkerHandle>(allWorkers.size());
 		for (WorkerHandle handle : allWorkers)
 			if (!handle.isStarve()) // If not marked for decommission
-				if (handle.getJobsInProcess().size() <= handle.handshake.cores*2) // If not full
 					filtered.add(handle);
 		return filtered;
 	}

@@ -5,17 +5,21 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 
-import com.amazonaws.services.elasticbeanstalk.model.Queue;
-
-import scheduler.*;
 import amazonTests.Configurations;
 import amazonTests.EC2CloudService;
 import amazonTests.NodeDetails;
@@ -43,7 +47,7 @@ public class HeadNode
 		return _cloudService;
 	}
 
-	private final BlockingQueue<Task> jobQueue = new java.util.concurrent.LinkedBlockingDeque<Task>();
+	private final BlockingDeque<Task> jobQueue = new java.util.concurrent.LinkedBlockingDeque<Task>();
 	private final BlockingQueue<Task> processed = new java.util.concurrent.LinkedBlockingDeque<Task>();
 	private final ConcurrentHashMap<String, WorkerHandle> workerPool = new ConcurrentHashMap<>();
 	private final Map<String, NodeDetails> expectedWorkerDetails = Collections.synchronizedMap(new HashMap<String, NodeDetails>());
