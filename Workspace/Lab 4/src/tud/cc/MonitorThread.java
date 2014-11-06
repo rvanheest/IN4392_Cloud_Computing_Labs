@@ -18,14 +18,13 @@ public class MonitorThread
 	
 	private final HeadNode headNode;
 	
-	private final List<Sample> samples = new ArrayList<>();
+	private final LinkedList<Sample> samples = new LinkedList<>();
 	
-	
+
 	public List<Sample> getHistory()
 	{
 		return Collections.unmodifiableList(samples);
 	}
-	
 	
 	public List<Sample> getHistory(int window)
 	{
@@ -73,7 +72,7 @@ public class MonitorThread
 		
 		// Condition 4: workload over 80%
 		boolean cond4 = true;
-		cond4 = samples.get(samples.size()-1).getWorkload() > 0.8;
+		cond4 = samples.getLast().getProcessedWorkload() > 0.8;
 		
 		
 		return new Boolean[] {
@@ -104,7 +103,7 @@ public class MonitorThread
 		
 		// Condition 2: Workload below 50% (more than 2 workers)
 		boolean cond2 = false;
-		cond2 = samples.get(samples.size()-1).getWorkload() < 0.5
+		cond2 = samples.getLast().getProcessedWorkload() < 0.5
 				&& workers.size() > 2;
 		
 		
@@ -161,9 +160,7 @@ public class MonitorThread
 			while (!closing)
 			{
 				// Sample the state of the system
-				Sample nextSample = headNode.takeSample();
-				this.samples.add(nextSample);
-				CSVWriter.getSamples().writeLine(nextSample.toParts());
+				sampleState();
 				
 				// Make decision every decisionInterval milliseconds
 				if (lastDecision + decisionInterval < System.currentTimeMillis())
@@ -202,6 +199,15 @@ public class MonitorThread
 		{
 			e.printStackTrace();
 		} 
+	}
+
+
+	private void sampleState() throws FileNotFoundException, UnsupportedEncodingException 
+	{
+		Sample nextSample = headNode.takeSample();
+		nextSample.setProcessedWorkload(0.8*samples.getLast().getProcessedWorkload() + 0.2*nextSample.getWorkload());
+		this.samples.add(nextSample);
+		CSVWriter.getSamples().writeLine(nextSample.toParts());
 	}
 	
 	

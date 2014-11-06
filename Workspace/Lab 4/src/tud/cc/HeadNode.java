@@ -163,7 +163,9 @@ public class HeadNode
 								System.out.println(job);
 							break;
 						case "workload":
-							System.out.println(this.takeSample().getWorkload());
+							Sample lastSample = this.monitorThread.getHistory(1).get(0);
+							System.out.println("Workload: " + lastSample.getWorkload()
+												+ " - Processed: " + lastSample.getWorkload());
 							break;
 						case "lease":
 							System.out.println("Leasing a new worker...");
@@ -275,6 +277,7 @@ public class HeadNode
 				(queueHead != null) ? System.currentTimeMillis() - queueHead.getTimeQueued() : 0,
 				cores,
 				workerPool.size(),
+				expectedWorkerDetails.size(),
 				jobsInWorkers,
 				jobsIn,
 				jobsOut
