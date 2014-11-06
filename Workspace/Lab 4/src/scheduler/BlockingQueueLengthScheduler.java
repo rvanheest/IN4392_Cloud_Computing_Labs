@@ -40,7 +40,7 @@ public class BlockingQueueLengthScheduler implements Scheduler {
 
 			for (Task task : tasks) {
 				System.out.println("\ttask: " + task);
-				if (!bestFull && result.size() < size) {
+				if (!bestFull) {
 					System.out.println("\t\tbestFull: " + bestFull);
 					System.out.println("\t\t" + result.size() + " < " + size + ": " + (result.size() < size));
     				WorkerHandleWrapper worker = workersQueue.poll();
