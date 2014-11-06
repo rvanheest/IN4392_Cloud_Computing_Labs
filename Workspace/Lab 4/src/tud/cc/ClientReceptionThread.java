@@ -21,14 +21,16 @@ public class ClientReceptionThread
 {
 	private boolean closing = false;
 	
+	private final HeadNode headnode;
 	private final ServerSocket socket;
 	private final BlockingQueue<Task> jobQueue;
 	private final Deque<CloseableThread> threads;
 	private final Map<UUID, ClientHandle> requestMap;
 	
-	public ClientReceptionThread(int port, BlockingQueue<Task> jobQueue, Deque<CloseableThread> threads, Map<UUID, ClientHandle> requestMap) throws IOException
+	public ClientReceptionThread(HeadNode headNode, int port, BlockingQueue<Task> jobQueue, Deque<CloseableThread> threads, Map<UUID, ClientHandle> requestMap) throws IOException
 	{
 		super("ClientReception");
+		this.headnode = headNode;
 		this.socket = new ServerSocket(port);
 		this.jobQueue = jobQueue;
 		this.threads = threads;
@@ -49,7 +51,7 @@ public class ClientReceptionThread
 				
 				System.out.println("Accepted client connection: " + connection.socket.getInetAddress().getHostAddress());
 				
-				ClientHandle handle = new ClientHandle(connection, jobQueue, requestMap);
+				ClientHandle handle = new ClientHandle(headnode, connection, jobQueue, requestMap);
 				threads.add(handle);
 				handle.start();
 			}
