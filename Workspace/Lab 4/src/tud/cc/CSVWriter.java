@@ -40,6 +40,7 @@ public class CSVWriter
 		{
 			writer.print(o.toString() + ", ");
 		}
+		writer.println();
 	}
 
 	
