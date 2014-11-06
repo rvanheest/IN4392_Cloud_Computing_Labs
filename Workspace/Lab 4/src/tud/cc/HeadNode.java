@@ -58,7 +58,13 @@ public class HeadNode
 	private final MonitorThread monitorThread;
 	
 	
-	public boolean isLeasing() 
+	private final List<Task> sampling_TasksJustIn = Collections.synchronizedList(new ArrayList<Task>());
+	private final List<Task> sampling_TasksJustOut = Collections.synchronizedList(new ArrayList<Task>());
+	public void justIn(Task task) { synchronized (sampling_TasksJustIn) { sampling_TasksJustIn.add(task); }}
+	public void justOut(Task task) { synchronized (sampling_TasksJustOut) { sampling_TasksJustOut.add(task); }}
+	
+	
+	public boolean isLeasing()
 	{ 
 		return expectedWorkerDetails.size() != 0;
 	}
@@ -70,9 +76,9 @@ public class HeadNode
 		
 		// Start all the threads
 		threads.add(this.workerReceptionThread = new WorkerReceptionThread(HeadWorkerPort, workerPool, processed, threads, expectedWorkerDetails));
-		threads.add(this.clientReceptionThread = new ClientReceptionThread(HeadClientPort, jobQueue, threads, requestMap));
+		threads.add(this.clientReceptionThread = new ClientReceptionThread(this, HeadClientPort, jobQueue, threads, requestMap));
 		threads.add(this.schedulerThread = new SchedulerThread(jobQueue, workerPool));
-		threads.add(this.responderThread = new ResponderThread(processed, requestMap));
+		threads.add(this.responderThread = new ResponderThread(this, processed, requestMap));
 		threads.add(this.monitorThread = new MonitorThread(this));
 		
 		for (Thread t : threads)
@@ -243,6 +249,17 @@ public class HeadNode
 			cores += worker.handshake.cores;
 			jobsInWorkers += worker.getJobsInProcess().size();
 		}
+		int jobsIn, jobsOut = -1;
+		synchronized (this.sampling_TasksJustIn)
+		{
+			jobsIn = this.sampling_TasksJustIn.size();
+			this.sampling_TasksJustIn.clear();
+		}
+		synchronized (this.sampling_TasksJustOut)
+		{
+			jobsOut = this.sampling_TasksJustOut.size();
+			this.sampling_TasksJustOut.clear();
+		}
 		
 		return new Sample
 		(
@@ -250,7 +267,9 @@ public class HeadNode
 				(queueHead != null) ? System.currentTimeMillis() - queueHead.getTimeQueued() : 0,
 				cores,
 				workerPool.size(),
-				jobsInWorkers
+				jobsInWorkers,
+				jobsIn,
+				jobsOut
 		);
 	}
 	

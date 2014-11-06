@@ -18,14 +18,16 @@ public class ClientHandle
 {
 	private boolean closing = false;
 	
+	private final HeadNode headnode;
 	private final Connection connection;
 	private final Queue<Task> jobQueue;
 	private final Map<UUID, ClientHandle> requestMap;
 	
 	
-	public ClientHandle(Connection connection, Queue<Task> jobQueue, Map<UUID, ClientHandle> requestMap) throws IOException
+	public ClientHandle(HeadNode headnode, Connection connection, Queue<Task> jobQueue, Map<UUID, ClientHandle> requestMap) throws IOException
 	{
 		super("ClientHandle");
+		this.headnode = headnode;
 		this.connection = connection;
 		this.jobQueue = jobQueue;
 		this.requestMap = requestMap;
@@ -53,6 +55,7 @@ public class ClientHandle
     			
     			task.queued();
     			jobQueue.add(task);
+    			headnode.justIn(task);
 			}
 		}
 		catch (IOException e)
