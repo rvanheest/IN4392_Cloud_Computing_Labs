@@ -174,6 +174,9 @@ public class HeadNode
 							WorkerHandle handle = workerPool.get(tokens[1]);
 							handle.close();
 							break;
+						case "leasing":
+							System.out.println("Leasing: " + this.isLeasing());
+							break;
 						case "sample":
 							System.out.println(this.takeSample());
 							break;
