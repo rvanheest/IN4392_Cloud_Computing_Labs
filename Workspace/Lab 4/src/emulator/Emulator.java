@@ -117,6 +117,9 @@ public class Emulator implements AutoCloseable {
 						catch (NumberFormatException e) {
 							System.err.println("a number was not formatted correctly");
 						}
+						catch (ArrayIndexOutOfBoundsException e) {
+							System.err.println("send should have the following format: \"send [number_of_images] [time_to_sleep]\"");
+						}
 						break;
 					case "send-all":
 						try {
@@ -127,6 +130,9 @@ public class Emulator implements AutoCloseable {
 						}
 						catch (NumberFormatException e) {
 							System.err.println("a number was not formatted correctly");
+						}
+						catch (ArrayIndexOutOfBoundsException e) {
+							System.err.println("send-all should have the following format: \"send-all [time_to_sleep]\"");
 						}
 						break;
 					case "experiment":
