@@ -1,6 +1,8 @@
 package tud.cc;
 
+import java.io.FileNotFoundException;
 import java.io.FilterReader;
+import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
@@ -159,7 +161,9 @@ public class MonitorThread
 			while (!closing)
 			{
 				// Sample the state of the system
-				this.samples.add(headNode.takeSample());
+				Sample nextSample = headNode.takeSample();
+				this.samples.add(nextSample);
+				CSVWriter.getSamples().writeLine(nextSample.toParts());
 				
 				// Make decision every decisionInterval milliseconds
 				if (lastDecision + decisionInterval < System.currentTimeMillis())
@@ -193,7 +197,11 @@ public class MonitorThread
 		{
 			if (!closing)
 				e.printStackTrace();
-		}
+		} 
+		catch (FileNotFoundException | UnsupportedEncodingException e)
+		{
+			e.printStackTrace();
+		} 
 	}
 	
 	
