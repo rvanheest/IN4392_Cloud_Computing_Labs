@@ -177,7 +177,7 @@ public class MonitorThread
 						if (any(leaseConds))
 						{
 							System.out.println(getName() + " recommended leasing: " + arrayToString(leaseConds));
-							headNode.startWorker();
+							headNode.leaseWorker();
 						}
 						
 						// Decide on releasing nodes

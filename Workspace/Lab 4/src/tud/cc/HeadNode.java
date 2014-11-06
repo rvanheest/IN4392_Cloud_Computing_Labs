@@ -167,7 +167,7 @@ public class HeadNode
 							break;
 						case "lease":
 							System.out.println("Leasing a new worker...");
-							NodeDetails workerDetails = startWorker();
+							NodeDetails workerDetails = leaseWorker();
 							System.out.println("Leased: " + workerDetails);
 							break;
 						case "release":
@@ -218,7 +218,7 @@ public class HeadNode
 	 * Deploys a new node and returns the IP of the node
 	 * @return The details of the node just deployed
 	 */
-	public synchronized NodeDetails startWorker()
+	public synchronized NodeDetails leaseWorker()
 	{
 		this.expectedWorkerDetails.put("Pending", null);
 		
