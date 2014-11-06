@@ -55,9 +55,6 @@ public class SchedulerThread
 					tasks.add(jobQueue.take());
 					this.jobQueue.drainTo(tasks);
 					
-					System.out.println("tasks: " + tasks.size());
-					System.out.println("eligibleWorkers: " + eligibleWorkers.size());
-					System.out.println("SCHEDULING:");
 					SchedulerResponse response = this.scheduler.schedule(tasks, eligibleWorkers);
 					
 					List<Task> reject = response.getReject();

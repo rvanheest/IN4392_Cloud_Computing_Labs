@@ -39,26 +39,19 @@ public class BlockingQueueLengthScheduler implements Scheduler {
 			boolean bestFull = false;
 
 			for (Task task : tasks) {
-				System.out.println("\ttask: " + task);
 				if (!bestFull) {
-					System.out.println("\t\tbestFull: " + bestFull);
-					System.out.println("\t\t" + result.size() + " < " + size + ": " + (result.size() < size));
     				WorkerHandleWrapper worker = workersQueue.poll();
     				if (worker.queueLength <= 2 * worker.getWorker().handshake.cores) {
-    					System.out.println("\t\t\ttask scheduled");
     					result.put(task, worker.getWorker());
         				workersQueue.add(worker.incrementQueueLength());
     				}
     				else {
-    					System.out.println("\t\t\ttask rejected");
     					bestFull = true;
     					reject.add(task);
     					workersQueue.add(worker);
     				}
 				}
 				else {
-					System.out.println("\t\tbestFull: " + bestFull);
-					System.out.println("\t\t\ttask rejected");
 					reject.add(task);
 				}
 			}
