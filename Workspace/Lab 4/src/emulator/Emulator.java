@@ -12,6 +12,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -101,16 +102,14 @@ public class Emulator implements AutoCloseable {
 			boolean isRunning = true;
 			while (isRunning) {
 				System.out.print("> ");
-				String command = consoleInput.readLine().trim();
+				String[] tokens = consoleInput.readLine().split("\\s");
+				String command = tokens[0];
 				switch (command) {
 					case "send":
 						try {
-							System.out.println("How many images do you want to send?");
-							int num = Integer.parseInt(consoleInput.readLine().trim());
+							int num = Integer.parseInt(tokens[1]);
 
-							System.out.println("How long should the interval be between sending "
-									+ "two images (in milliseconds)?");
-							int timeToSleep = Integer.parseInt(consoleInput.readLine().trim());
+							int timeToSleep = Integer.parseInt(tokens[2]);
 
 							new RandomOutputThread(this.out, this.sendTimes, num, timeToSleep,
 									this.images).start();
@@ -121,9 +120,7 @@ public class Emulator implements AutoCloseable {
 						break;
 					case "send-all":
 						try {
-							System.out.println("How long should the interval be between sending "
-									+ "two images (in milliseconds)?");
-							int sleepTime = Integer.parseInt(consoleInput.readLine().trim());
+							int sleepTime = Integer.parseInt(tokens[1]);
 
 							new AllOutputThread(this.out, this.sendTimes, sleepTime, this.images)
 									.start();
@@ -134,8 +131,7 @@ public class Emulator implements AutoCloseable {
 						break;
 					case "experiment":
 						try {
-							System.out.println("Which experiment do you want? [1]");
-							int experiment = Integer.parseInt(consoleInput.readLine().trim());
+							int experiment = Integer.parseInt(tokens[1]);
 
 							switch (experiment) {
 								case 1:
@@ -148,6 +144,19 @@ public class Emulator implements AutoCloseable {
 						}
 						catch (NumberFormatException e) {
 							System.err.println("a number was not formatted correctly");
+						}
+						break;
+					case "pending_num":
+						System.out.println(this.sendTimes.size());
+						break;
+					case "pending":
+						for (Entry<UUID, Long> entry : this.sendTimes.entrySet()) {
+							System.out.println(entry.getKey() + "\t" + entry.getValue());
+						}
+						break;
+					case "pending_keys":
+						for (UUID uuid : this.sendTimes.keySet()) {
+							System.out.println(uuid);
 						}
 						break;
 					case "ping":
