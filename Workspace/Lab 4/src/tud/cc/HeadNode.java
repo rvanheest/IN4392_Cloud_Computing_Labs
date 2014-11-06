@@ -4,87 +4,29 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.*;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 
-import com.amazonaws.services.elasticbeanstalk.model.Queue;
-
-import scheduler.*;
 import amazonTests.Configurations;
 import amazonTests.EC2CloudService;
 import amazonTests.NodeDetails;
 import data.Sample;
 import data.Task;
 import emulator.Emulator;
-
-
-class Connection
-	implements AutoCloseable
-{
-	public final Socket socket;
-	public final ObjectOutputStream out;
-	public final ObjectInputStream in;
-	
-	public Connection(Socket socket) throws IOException
-	{
-		this.socket = socket;
-		this.in = new ObjectInputStream(socket.getInputStream());
-		this.out = new ObjectOutputStream(socket.getOutputStream());
-	}
-
-	@Override
-	public void close() throws Exception 
-	{
-		this.in.close();
-		this.out.close();
-		this.socket.close();
-	}
-	
-	public void send(Object o) throws IOException
-	{
-		synchronized (out)
-		{
-			out.writeObject(o);
-		}
-	}
-	
-	public <T> T receive() throws ClassNotFoundException, IOException
-	{
-		synchronized (in)
-		{
-			T readObject = (T) this.in.readObject();
-			return readObject;
-		}
-	}
-	
-	@Override
-	public int hashCode() 
-	{
-		return Objects.hash(socket, out, in);
-	}
-	
-	@Override
-	public boolean equals(Object obj) 
-	{
-		if (obj instanceof Connection)
-		{
-			Connection other = (Connection) obj;
-			return this.socket.equals(other.socket);
-		}
-		return false;
-	}
-}
-
 
 
 public class HeadNode 
@@ -106,7 +48,7 @@ public class HeadNode
 		return _cloudService;
 	}
 
-	private final BlockingQueue<Task> jobQueue = new java.util.concurrent.LinkedBlockingDeque<Task>();
+	private final BlockingDeque<Task> jobQueue = new java.util.concurrent.LinkedBlockingDeque<Task>();
 	private final BlockingQueue<Task> processed = new java.util.concurrent.LinkedBlockingDeque<Task>();
 	private final ConcurrentHashMap<String, WorkerHandle> workerPool = new ConcurrentHashMap<>();
 	private final Map<String, NodeDetails> expectedWorkerDetails = Collections.synchronizedMap(new HashMap<String, NodeDetails>());
@@ -121,7 +63,13 @@ public class HeadNode
 	private final MonitorThread monitorThread;
 	
 	
-	public boolean isLeasing() 
+	private final List<Task> sampling_TasksJustIn = Collections.synchronizedList(new ArrayList<Task>());
+	private final List<Task> sampling_TasksJustOut = Collections.synchronizedList(new ArrayList<Task>());
+	public void justIn(Task task) { synchronized (sampling_TasksJustIn) { sampling_TasksJustIn.add(task); }}
+	public void justOut(Task task) { synchronized (sampling_TasksJustOut) { sampling_TasksJustOut.add(task); }}
+	
+	
+	public boolean isLeasing()
 	{ 
 		return expectedWorkerDetails.size() != 0;
 	}
@@ -133,9 +81,9 @@ public class HeadNode
 		
 		// Start all the threads
 		threads.add(this.workerReceptionThread = new WorkerReceptionThread(HeadWorkerPort, workerPool, processed, threads, expectedWorkerDetails));
-		threads.add(this.clientReceptionThread = new ClientReceptionThread(HeadClientPort, jobQueue, threads, requestMap));
+		threads.add(this.clientReceptionThread = new ClientReceptionThread(this, HeadClientPort, jobQueue, threads, requestMap));
 		threads.add(this.schedulerThread = new SchedulerThread(jobQueue, workerPool));
-		threads.add(this.responderThread = new ResponderThread(processed, requestMap));
+		threads.add(this.responderThread = new ResponderThread(this, processed, requestMap));
 		threads.add(this.monitorThread = new MonitorThread(this));
 		
 		for (Thread t : threads)
@@ -197,8 +145,8 @@ public class HeadNode
 					switch (command)
 					{
 						case "workers":
+						case "w":
 							for (Entry<String, WorkerHandle> entry : workerPool.entrySet())
-//								System.out.println(inet);
 								System.out.println(entry.getValue());
 							break;
 						case "worker-details":
@@ -206,12 +154,16 @@ public class HeadNode
 								System.out.println(details);
 							break;
 						case "queue":
+						case "q":
 							for (Task job : jobQueue)
 								System.out.println(job);
 							break;
 						case "processed":
 							for (Task job : processed)
 								System.out.println(job);
+							break;
+						case "workload":
+							System.out.println(this.takeSample().getWorkload());
 							break;
 						case "lease":
 							System.out.println("Leasing a new worker...");
@@ -294,10 +246,35 @@ public class HeadNode
 	public Sample takeSample()
 	{
 		Task queueHead = jobQueue.peek();
+		
+		int cores = 0;
+		int jobsInWorkers = 0;
+		for (WorkerHandle worker : this.workerPool.values())
+		{
+			cores += worker.handshake.cores;
+			jobsInWorkers += worker.getJobsInProcess().size();
+		}
+		int jobsIn, jobsOut = -1;
+		synchronized (this.sampling_TasksJustIn)
+		{
+			jobsIn = this.sampling_TasksJustIn.size();
+			this.sampling_TasksJustIn.clear();
+		}
+		synchronized (this.sampling_TasksJustOut)
+		{
+			jobsOut = this.sampling_TasksJustOut.size();
+			this.sampling_TasksJustOut.clear();
+		}
+		
 		return new Sample
 		(
 				jobQueue.size(),
-				(queueHead != null) ? System.currentTimeMillis() - queueHead.getTimeQueued() : 0
+				(queueHead != null) ? System.currentTimeMillis() - queueHead.getTimeQueued() : 0,
+				cores,
+				workerPool.size(),
+				jobsInWorkers,
+				jobsIn,
+				jobsOut
 		);
 	}
 	

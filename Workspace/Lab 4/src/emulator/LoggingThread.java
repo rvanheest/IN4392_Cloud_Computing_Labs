@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 
 import data.Timing;
 
-class LoggingThread extends Thread {
+public class LoggingThread extends Thread {
 
 	private final BlockingQueue<Timing> completionTimes;
 	private final Logger logger;

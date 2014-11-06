@@ -1,13 +1,16 @@
 package tud.cc;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.BlockingDeque;
 
-import scheduler.RandomScheduler;
+import scheduler.BlockingQueueLengthScheduler;
 import scheduler.Scheduler;
-import scheduler.SchedulerException;
+import scheduler.SchedulerResponse;
 import data.Task;
 
 public class SchedulerThread
@@ -15,13 +18,13 @@ public class SchedulerThread
 {
 	private boolean closing;
 	
-	private final Scheduler scheduler = new RandomScheduler(new Random());
+	private final Scheduler scheduler = new BlockingQueueLengthScheduler();
 	
-	private final BlockingQueue<Task> jobQueue;
+	private final BlockingDeque<Task> jobQueue;
 	private final Map<String, WorkerHandle> workerPool;
 	
 	
-	public SchedulerThread(BlockingQueue<Task> jobQueue, Map<String, WorkerHandle> workerPool)
+	public SchedulerThread(BlockingDeque<Task> jobQueue, Map<String, WorkerHandle> workerPool)
 	{
 		super("Scheduler");
 		this.jobQueue = jobQueue;
@@ -38,43 +41,49 @@ public class SchedulerThread
 		{
 			while (!closing)
 			{
+				sleep(1000);
 				try
 				{
+					// Wait for first worker
 					if ( workerPool.values().size() < 1 )
-					{	// No workers
-						try {
-							sleep(5000);
-						} catch (InterruptedException e) {}
-						continue;
+					{
+						sleep(5000);
 					}
 					
-					// Take job from queue
-					ArrayList<Task> tasks = new ArrayList<>();
+					Collection<WorkerHandle> eligibleWorkers = this.getEligibleWorkers(workerPool.values());
+					List<Task> tasks = new ArrayList<>();
 					tasks.add(jobQueue.take());
-					Task nextTask = null;
-					while ((nextTask = jobQueue.poll()) != null)
-						tasks.add(nextTask);
+					this.jobQueue.drainTo(tasks);
 					
-					// Schedule
-					Map<Task, WorkerHandle> mapping = scheduler.schedule(tasks, getElligibleWorkers(workerPool.values()));
+					SchedulerResponse response = this.scheduler.schedule(tasks, eligibleWorkers);
+					
+					List<Task> reject = response.getReject();
+					int size = reject.size();
+					for (int i = size - 1; i >= 0; i--) {
+						this.jobQueue.putFirst(reject.get(i));
+					}
 					
 					// Send to worker
-					for (Entry<Task, WorkerHandle> entry : mapping.entrySet())
+					for (Entry<Task, WorkerHandle> entry : response.getAccept().entrySet())
 					{
 						Task task = entry.getKey();
 						WorkerHandle handle = entry.getValue();
 						task.scheduled();
-						try {
+						try 
+						{
 							handle.sendJob(task);
-						} catch (IllegalAccessException e) {
+						} 
+						catch (IllegalAccessException e) 
+						{
 							// Job was rejected. Re-queue job
-							jobQueue.add(task);
+							jobQueue.putLast(task);
 							// Print error; This error should not occur.
 							e.printStackTrace();
 						}
 					}
+					System.out.println(getName() + " scheduled " + response.getAccept().size() + "/" + tasks.size() + " jobs.");
 				}
-				catch (SchedulerException | IOException e)
+				catch (IOException e)
 				{
 					e.printStackTrace();
 				}
@@ -93,12 +102,12 @@ public class SchedulerThread
 	 * @param allWorkers The original collection of workers.
 	 * @return The filtered collection.
 	 */
-	private Collection<WorkerHandle> getElligibleWorkers(Collection<WorkerHandle> allWorkers)
+	private Collection<WorkerHandle> getEligibleWorkers(Collection<WorkerHandle> allWorkers)
 	{
 		ArrayList<WorkerHandle> filtered = new ArrayList<WorkerHandle>(allWorkers.size());
 		for (WorkerHandle handle : allWorkers)
-			if (!handle.isStarve())
-				filtered.add(handle);
+			if (!handle.isStarve()) // If not marked for decommission
+					filtered.add(handle);
 		return filtered;
 	}
 
@@ -109,7 +118,6 @@ public class SchedulerThread
 		this.closing = true;
 		this.interrupt();
 		
-		// TODO Auto-generated method stub
 		System.out.println(getName() + " closed.");	
 	}
 }

@@ -11,6 +11,8 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,6 +29,7 @@ import javax.imageio.ImageIO;
 
 import tud.cc.HeadNode;
 import data.Timing;
+import emulator.experiments.ExperimentSetups;
 
 public class Emulator implements AutoCloseable {
 
@@ -37,23 +40,20 @@ public class Emulator implements AutoCloseable {
 	private final ConcurrentMap<UUID, Long> sendTimes = new ConcurrentHashMap<>();
 	private final BlockingQueue<Timing> completionTimes = new LinkedBlockingQueue<Timing>();
 
-	private final ArrayList<BufferedImage> images = new ArrayList<>(); 
-	
+	private final List<BufferedImage> images = new ArrayList<>();
+
 	private final InputThread input;
 	private final LoggingThread logging;
 
-	private final File directory;
 	private final Logger logger = Logger.getLogger("emulator");
 
 	public Emulator(String head, File dir) throws UnknownHostException, IOException {
 		this.socket = new Socket(InetAddress.getByName(head), HeadNode.HeadClientPort);
 		this.out = new ObjectOutputStream(this.socket.getOutputStream());
 		this.in = new ObjectInputStream(this.socket.getInputStream());
-		
+
 		this.input = new InputThread(this.in, this.sendTimes, this.completionTimes);
 		this.logging = new LoggingThread(this.completionTimes, this.logger);
-
-		this.directory = dir;
 
 		this.initLogger();
 		this.bufferImages(dir);
@@ -76,7 +76,7 @@ public class Emulator implements AutoCloseable {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private void bufferImages(File imageDirectory) throws IOException {
 		System.out.println("Preloading images");
 		File[] imageFiles = imageDirectory.listFiles();
@@ -102,35 +102,67 @@ public class Emulator implements AutoCloseable {
 			boolean isRunning = true;
 			while (isRunning) {
 				System.out.print("> ");
-				String command = consoleInput.readLine().trim();
+				String[] tokens = consoleInput.readLine().split("\\s");
+				String command = tokens[0];
 				switch (command) {
 					case "send":
 						try {
-							System.out.println("How many images do you want to send?");
-							int num = Integer.parseInt(consoleInput.readLine().trim());
+							int num = Integer.parseInt(tokens[1]);
 
-							System.out.println("How long should the interval be between sending "
-									+ "two images (in milliseconds)?");
-							int timeToSleep = Integer.parseInt(consoleInput.readLine().trim());
+							int timeToSleep = Integer.parseInt(tokens[2]);
 
-							new RandomOutputThread(this.out, this.sendTimes,
-									num, timeToSleep, this.images).start();
+							new RandomOutputThread(this.out, this.sendTimes, num, timeToSleep,
+									this.images).start();
 						}
 						catch (NumberFormatException e) {
 							System.err.println("a number was not formatted correctly");
 						}
+						catch (ArrayIndexOutOfBoundsException e) {
+							System.err.println("send should have the following format: \"send [number_of_images] [time_to_sleep]\"");
+						}
 						break;
 					case "send-all":
 						try {
-							System.out.println("How long should the interval be between sending "
-									+ "two images (in milliseconds)?");
-							int sleepTime = Integer.parseInt(consoleInput.readLine().trim());
+							int sleepTime = Integer.parseInt(tokens[1]);
 
 							new AllOutputThread(this.out, this.sendTimes, sleepTime, this.images)
 									.start();
 						}
 						catch (NumberFormatException e) {
 							System.err.println("a number was not formatted correctly");
+						}
+						catch (ArrayIndexOutOfBoundsException e) {
+							System.err.println("send-all should have the following format: \"send-all [time_to_sleep]\"");
+						}
+						break;
+					case "experiment":
+						try {
+							int experiment = Integer.parseInt(tokens[1]);
+
+							switch (experiment) {
+								case 1:
+									new ExperimentOutputThread(ExperimentSetups.experiment1(
+											this.out, this.sendTimes, this.images)).start();
+									break;
+								default:
+									System.out.println("experiment is not found");
+							}
+						}
+						catch (NumberFormatException e) {
+							System.err.println("a number was not formatted correctly");
+						}
+						break;
+					case "pending_num":
+						System.out.println(this.sendTimes.size());
+						break;
+					case "pending":
+						for (Entry<UUID, Long> entry : this.sendTimes.entrySet()) {
+							System.out.println(entry.getKey() + "\t" + entry.getValue());
+						}
+						break;
+					case "pending_keys":
+						for (UUID uuid : this.sendTimes.keySet()) {
+							System.out.println(uuid);
 						}
 						break;
 					case "ping":

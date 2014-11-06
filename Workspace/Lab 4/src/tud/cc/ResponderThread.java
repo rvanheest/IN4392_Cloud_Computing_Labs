@@ -13,13 +13,15 @@ public class ResponderThread
 {
 	private boolean closing = false;
 	
+	private final HeadNode headnode;
 	private final BlockingQueue<Task> processed;
 	private final Map<UUID, ClientHandle> requestMap;
 	
 	
-	public ResponderThread(BlockingQueue<Task> processed, Map<UUID, ClientHandle> requestMap)
+	public ResponderThread(HeadNode headNode, BlockingQueue<Task> processed, Map<UUID, ClientHandle> requestMap)
 	{
 		super("ResponderThread");
+		this.headnode = headNode;
 		this.processed = processed;
 		this.requestMap = requestMap;
 	}
@@ -37,13 +39,26 @@ public class ResponderThread
 				try
 				{
 					Task task = processed.take();
-					task.served();
 					
 					UUID requestUuid = task.getRequestUuid();
-					Request response = new Request(requestUuid, task.getImage());
+					Request response = new Request(requestUuid, task.getImage(), task.getPixelCount());
 					
 					ClientHandle handle = requestMap.get(requestUuid);
 					handle.sendResponse(response);
+					
+					task.served();
+					System.out.println(getName() + " job completed " + task);
+					headnode.justOut(task);
+					CSVWriter.getJobs().writeLine(
+							task.getUuid(),
+							task.getImage().length,
+							task.getTimeQueued(),
+							task.getTimeScheduled(),
+							task.getTimeProcessed(),
+							task.getTimeServed(),
+							task.getTimeWorkerReceived(),
+							task.getTimeWorkerProcessed()							
+					);
 				}
 				catch (IOException e) 
 				{

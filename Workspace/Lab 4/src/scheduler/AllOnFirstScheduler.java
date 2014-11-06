@@ -1,5 +1,6 @@
 package scheduler;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -18,8 +19,7 @@ import data.Task;
 public class AllOnFirstScheduler implements Scheduler {
 
 	@Override
-	public Map<Task, WorkerHandle> schedule(List<Task> tasks, Collection<WorkerHandle> workers)
-			throws SchedulerException {
+	public SchedulerResponse schedule(List<Task> tasks, Collection<WorkerHandle> workers) {
 		Map<Task, WorkerHandle> result = new HashMap<>();
 
 		Iterator<WorkerHandle> iterator = workers.iterator();
@@ -32,9 +32,9 @@ public class AllOnFirstScheduler implements Scheduler {
 		else {
 			assert workers.isEmpty() : "The workers set should be empty, but contained: "
 					+ workers.toString();
-			throw new SchedulerException("The set of WorkerHandles was empty");
+			return new SchedulerResponse(result, new ArrayList<>(tasks));
 		}
 
-		return result;
+		return new SchedulerResponse(result);
 	}
 }

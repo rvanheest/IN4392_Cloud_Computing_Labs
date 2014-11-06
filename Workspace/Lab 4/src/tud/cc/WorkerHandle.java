@@ -1,12 +1,17 @@
 package tud.cc;
 
+import imageProcessing.worker.WorkerHandshake;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
+import java.util.UUID;
 
-import tud.cc.WorkerHandle;
 import amazonTests.NodeDetails;
 import data.Task;
 
@@ -30,6 +35,7 @@ public class WorkerHandle
 	 */
 	private boolean decommision = false;
 	
+	public  final WorkerHandshake handshake;
 	private final NodeDetails nodeDetails;
 	private final Socket workerSocket;
 	private final ObjectInputStream in;
@@ -41,12 +47,23 @@ public class WorkerHandle
 	 * Contains the jobs currently being handled by this worker
 	 * as a set of (jobID -> imageSize) tuples
 	 */
-	private final Map<UUID, Integer> jobsInProcess = Collections.synchronizedMap(new HashMap<UUID, Integer>());
-	public Map<UUID, Integer> getJobsInProcess()
+	private final Map<UUID, Long> jobsInProcess = Collections.synchronizedMap(new HashMap<UUID, Long>());
+	public Map<UUID, Long> getJobsInProcess()
 	{
 		return Collections.unmodifiableMap(jobsInProcess);
 	}
 	
+	public boolean isFull() {
+		return this.getJobsInProcess().size() <= 2 * this.handshake.cores;
+	}
+	
+	public long getPixelsInProcess() {
+		long sum = 0;
+		for (Long l : this.getJobsInProcess().values()) {
+			sum += l;
+		}
+		return sum;
+	}
 	
 	/**
 	 * 
@@ -55,8 +72,9 @@ public class WorkerHandle
 	 * @param processedQueue
 	 * @param workerPool
 	 * @throws IOException
+	 * @throws ClassNotFoundException 
 	 */
-	public WorkerHandle(NodeDetails nodeDetails, Socket workerSocket, Queue<Task> processedQueue, Map<String, WorkerHandle> workerPool) throws IOException
+	public WorkerHandle(NodeDetails nodeDetails, Socket workerSocket, Queue<Task> processedQueue, Map<String, WorkerHandle> workerPool) throws IOException, ClassNotFoundException
 	{
 		super("WorkerHandle");
 		
@@ -69,6 +87,8 @@ public class WorkerHandle
 		this.out = new ObjectOutputStream(workerSocket.getOutputStream());
 		this.processedQueue = processedQueue;
 		this.workerPool = workerPool;
+		
+		this.handshake = (WorkerHandshake) in.readObject();
 	}
 	
 	
@@ -103,7 +123,7 @@ public class WorkerHandle
 			{
 				// Read processed jobs from worker
 				Task job = (Task) in.readObject();
-				System.out.println(getName() + ": received from worker: " + job.getImage().length + "b");
+				//System.out.println(getName() + ": received from worker: " + job.getImage().length + "b");
 				job.processed();
 				this.jobsInProcess.remove(job.getUuid());
 				
@@ -128,9 +148,9 @@ public class WorkerHandle
 	 * The data stop being up-to-date as soon as the function returns.
 	 * @return The snapshot
 	 */
-	public Map<UUID, Integer> getWorkloadSnapshot()
+	public Map<UUID, Long> getWorkloadSnapshot()
 	{
-		return new HashMap<UUID, Integer>(this.jobsInProcess);
+		return new HashMap<UUID, Long>(this.jobsInProcess);
 	}
 	
 	
@@ -149,9 +169,9 @@ public class WorkerHandle
 		if (this.isStarve())
 			throw new IllegalAccessException("Worker cannot accept jobs while starving");
 		
-		System.out.println(Thread.currentThread().getName() +  " sending job to " + workerSocket.getInetAddress().getHostAddress());
+		//System.out.println(Thread.currentThread().getName() +  " sending job to " + workerSocket.getInetAddress().getHostAddress());
 
-		this.jobsInProcess.put(job.getUuid(), job.getImage().length);
+		this.jobsInProcess.put(job.getUuid(), job.getPixelCount());
 		
 		// Send job
 		out.writeObject(job);
@@ -209,6 +229,7 @@ public class WorkerHandle
 		this.interrupt();
 		
 		workerPool.remove(this.nodeDetails.getNodePrivateIP().getHostAddress());
+		// TODO remove thread from thread pool too
 		
 		this.in.close();
 		this.out.close();
@@ -224,10 +245,10 @@ public class WorkerHandle
 	public String toString() 
 	{
 		int bs = 0;
-		for (Integer i : this.jobsInProcess.values())
-			bs += i;
+		for (Long l : this.jobsInProcess.values())
+			bs += l;
 		
-		return this.workerSocket.getInetAddress().getHostAddress() + ": " + this.jobsInProcess.size() + " jobs, " + bs + " bytes";
+		return this.workerSocket.getInetAddress().getHostAddress() + "x" + this.handshake.cores + ": " + this.jobsInProcess.size() + " jobs, " + bs + " px";
 	}
 }
 

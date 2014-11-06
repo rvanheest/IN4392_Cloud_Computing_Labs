@@ -18,14 +18,16 @@ public class ClientHandle
 {
 	private boolean closing = false;
 	
+	private final HeadNode headnode;
 	private final Connection connection;
 	private final Queue<Task> jobQueue;
 	private final Map<UUID, ClientHandle> requestMap;
 	
 	
-	public ClientHandle(Connection connection, Queue<Task> jobQueue, Map<UUID, ClientHandle> requestMap) throws IOException
+	public ClientHandle(HeadNode headnode, Connection connection, Queue<Task> jobQueue, Map<UUID, ClientHandle> requestMap) throws IOException
 	{
 		super("ClientHandle");
+		this.headnode = headnode;
 		this.connection = connection;
 		this.jobQueue = jobQueue;
 		this.requestMap = requestMap;
@@ -43,16 +45,17 @@ public class ClientHandle
 			{
 				// Get request
 				Request request = connection.receive();
-    			System.out.println(getName() + " received request " + request.getImage().length + "b");
+    			//System.out.println(getName() + " received request " + request.getImage().length + "b");
 
     			// TODO Image backup
     			
 				// Queue task
-    			Task task = new Task(request.getId(), request.getImage());
+    			Task task = new Task(request.getId(), request.getImage(), request.getPixelCount());
     			requestMap.put(request.getId(), this);
     			
+    			task.queued();
     			jobQueue.add(task);
-    			task.queued();	
+    			headnode.justIn(task);
 			}
 		}
 		catch (IOException e)
@@ -88,7 +91,7 @@ public class ClientHandle
 		if (response == null)
 			throw new NullPointerException("Response cannot be null");
 		
-		System.out.println(getName() + " sending response to " + connection.socket.getInetAddress().getHostAddress());
+		//System.out.println(getName() + " sending response to " + connection.socket.getInetAddress().getHostAddress());
 		requestMap.remove(response.getId());
 		
 		this.connection.send(response);
