@@ -19,14 +19,16 @@ public class Task
 	private long timeServed = -1;
 	
 	private byte[] image;
+	private long px;
 	
 	
-	public Task(UUID requestUuid, byte[] image) 
+	public Task(UUID requestUuid, byte[] image, long px) 
 	{
 		this.uuid = UUID.randomUUID();
 		this.requestUuid = requestUuid;
 		
 		this.image = image;
+		this.px = px;
 	}
 
 	public Task(Task t, byte[] newImage) 
@@ -82,6 +84,10 @@ public class Task
 	
 	public int getImageSize() {
 		return this.getImage().length;
+	}
+	
+	public long getPixelCount() {
+		return this.px;
 	}
 
 	public void queued()

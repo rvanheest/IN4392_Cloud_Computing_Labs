@@ -33,10 +33,21 @@ public class BlockingQueueBytesScheduler implements Scheduler {
 			for (WorkerHandle worker : workers) {
 				workersQueue.add(new WorkerHandleWrapper(worker));
 			}
+			
+			boolean bestFull = false;
 
 			for (Task task : tasks) {
-				if (result.size() < size) {
+				if (!bestFull && result.size() < size) {
     				WorkerHandleWrapper worker = workersQueue.poll();
+    				if (worker.px <= 630 * 10_000) {
+    					bestFull = true;
+    					reject.add(task);
+    					workersQueue.add(worker);
+    				}
+    				else {
+        				result.put(task, worker.getWorker());
+        				workersQueue.add(worker.incrementQueueLength(task.getPixelCount()));
+    				}
     				result.put(task, worker.getWorker());
     				workersQueue.add(worker.incrementQueueLength(task.getImageSize()));
 				}
@@ -52,28 +63,28 @@ public class BlockingQueueBytesScheduler implements Scheduler {
 	private class WorkerHandleWrapper {
 
 		private final WorkerHandle worker;
-		private final long bytes;
+		private final long px;
 
 		public WorkerHandleWrapper(WorkerHandle worker) {
 			this.worker = worker;
-			this.bytes = worker.getJobsInProcess().size();
+			this.px = worker.getPixelsInProcess();
 		}
 
-		private WorkerHandleWrapper(WorkerHandle worker, long bytes) {
+		private WorkerHandleWrapper(WorkerHandle worker, long px) {
 			this.worker = worker;
-			this.bytes = bytes;
+			this.px = px;
 		}
 
 		public WorkerHandle getWorker() {
 			return worker;
 		}
 
-		public long getBytes() {
-			return bytes;
+		public long getPixelCount() {
+			return px;
 		}
 
-		public WorkerHandleWrapper incrementQueueLength(int b) {
-			return new WorkerHandleWrapper(this.worker, this.bytes + b);
+		public WorkerHandleWrapper incrementQueueLength(long pxs) {
+			return new WorkerHandleWrapper(this.worker, this.px + pxs);
 		}
 	}
 
@@ -85,8 +96,8 @@ public class BlockingQueueBytesScheduler implements Scheduler {
 			// worker1 = worker2 => 0
 			// worker1 > worker2 => -1
 
-			long size1 = worker1.getBytes();
-			long size2 = worker2.getBytes();
+			long size1 = worker1.getPixelCount();
+			long size2 = worker2.getPixelCount();
 
 			if (size1 < size2) {
 				return 1;

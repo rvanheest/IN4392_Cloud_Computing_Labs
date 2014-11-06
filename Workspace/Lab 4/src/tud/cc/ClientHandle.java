@@ -50,7 +50,7 @@ public class ClientHandle
     			// TODO Image backup
     			
 				// Queue task
-    			Task task = new Task(request.getId(), request.getImage());
+    			Task task = new Task(request.getId(), request.getImage(), request.getPixelCount());
     			requestMap.put(request.getId(), this);
     			
     			task.queued();

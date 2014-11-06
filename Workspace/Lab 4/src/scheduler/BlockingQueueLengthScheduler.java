@@ -33,12 +33,21 @@ public class BlockingQueueLengthScheduler implements Scheduler {
 			for (WorkerHandle worker : workers) {
 				workersQueue.add(new WorkerHandleWrapper(worker));
 			}
+			
+			boolean bestFull = false;
 
 			for (Task task : tasks) {
-				if (result.size() < size) {
+				if (!bestFull && result.size() < size) {
     				WorkerHandleWrapper worker = workersQueue.poll();
-    				result.put(task, worker.getWorker());
-    				workersQueue.add(worker.incrementQueueLength());
+    				if (worker.queueLength <= 2 * worker.getWorker().handshake.cores) {
+    					bestFull = true;
+    					reject.add(task);
+    					workersQueue.add(worker);
+    				}
+    				else {
+        				result.put(task, worker.getWorker());
+        				workersQueue.add(worker.incrementQueueLength());
+    				}
 				}
 				else {
 					reject.add(task);

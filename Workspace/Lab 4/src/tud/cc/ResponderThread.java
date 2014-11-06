@@ -41,7 +41,7 @@ public class ResponderThread
 					Task task = processed.take();
 					
 					UUID requestUuid = task.getRequestUuid();
-					Request response = new Request(requestUuid, task.getImage());
+					Request response = new Request(requestUuid, task.getImage(), task.getPixelCount());
 					
 					ClientHandle handle = requestMap.get(requestUuid);
 					handle.sendResponse(response);

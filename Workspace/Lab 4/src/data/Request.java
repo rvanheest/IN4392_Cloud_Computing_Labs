@@ -10,10 +10,12 @@ public class Request implements Serializable {
 
 	private final UUID id;
 	private final byte[] image;
+	private final long px;
 
-	public Request(UUID id, byte[] image) {
+	public Request(UUID id, byte[] image, long px) {
 		this.id = id;
 		this.image = image;
+		this.px = px;
 	}
 
 	public UUID getId() {
@@ -22,6 +24,10 @@ public class Request implements Serializable {
 
 	public byte[] getImage() {
 		return image;
+	}
+	
+	public long getPixelCount() {
+		return this.px;
 	}
 
 	@Override
@@ -35,11 +41,11 @@ public class Request implements Serializable {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, image);
+		return Objects.hash(this.id, this.image, this.px);
 	}
 
 	@Override
 	public String toString() {
-		return "Request " + id + ": " + this.image.length + "b";
+		return "Request " + this.id + ": " + this.image.length + " b - " + this.px + " px";
 	}
 }
