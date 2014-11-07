@@ -33,6 +33,21 @@ public class MonitorThread
 		return history.subList(history.size()-window, history.size());
 	}
 	
+	public List<Sample> getHistory(int window, long millisago)
+	{
+		long after = System.currentTimeMillis() - millisago;
+		
+		window = Math.min(window, samples.size());
+		List<Sample> history = samples.subList(samples.size()-window, samples.size());
+		
+		ArrayList<Sample> filter = new ArrayList<>();
+		for (Sample sample : history)
+			if (sample.timestamp > after )
+				filter.add(sample);
+		
+		return Collections.unmodifiableList(filter);
+	}
+	
 	
 	public MonitorThread(HeadNode headNode)
 	{
@@ -46,7 +61,7 @@ public class MonitorThread
 	 * Evaluate leasing condition
 	 * @return true if leasing is recommended
 	 */
-	private Boolean[] leaseConditions()
+	private boolean leaseConditions()
 	{
 		Collection<WorkerHandle> workers = getWorkers();
 		
@@ -60,10 +75,10 @@ public class MonitorThread
 		cond2 = samples.getLast().getSmoothPromisedWorkload() > 0.8;
 		
 		
-		return new Boolean[] {
+		return any(new Boolean[] {
 				cond1,
 				cond2
-		};
+		});
 	}
 	
 	
@@ -71,19 +86,26 @@ public class MonitorThread
 	 * Evaluate releasing condition
 	 * @return true if releasing one worker is recommended
 	 */
-	private Boolean[] releaseConditions()
+	private boolean releaseConditions()
 	{
 		Collection<WorkerHandle> workers = getWorkers();
 		
-		// Condition 1: Workload below 50% (more than 2 workers)
-		boolean cond1 = false;
-		cond1 = samples.getLast().getSmoothPromisedWorkload() < 0.5
-				&& workers.size() > 2;
+		// Set minimum to 2 workers
+		if (workers.size() <= 2)
+			return false;
 		
-		
-		return new Boolean[] {
+		// Condition 1: Workload consistently below 50% for 30s
+		boolean cond1 = true;
+		Collection<Sample> history = getHistory(10, 30_000);
+		if (history.size()>3) // Monitoring thread not being starved
+			for (Sample sample : history)
+				if (sample.getSmoothPromisedWorkload() > 0.5)
+					cond1 = false;
+				
+				
+		return any(new Boolean[] {
 				cond1
-		};
+		});
 	}
 	
 	
@@ -104,6 +126,11 @@ public class MonitorThread
 			if (b)
 				return true;
 		return false;
+	}
+	
+	private boolean any(Boolean bool)
+	{
+		return bool;
 	}
 	
 	
@@ -143,19 +170,21 @@ public class MonitorThread
 					if (!headNode.isLeasing())
 					{
 						// Decide on leasing nodes
-						Boolean[] leaseConds = leaseConditions(); 
+						Boolean leaseConds = leaseConditions(); 
 						if (any(leaseConds))
 						{
-							System.out.println(getName() + " recommended leasing: " + arrayToString(leaseConds));
-							// TODO lease more than one
+							// Increase workforce by 25% every time it is insufficient
+							int leaseCount = samples.getLast().workersLeased / 4;
+							leaseCount = Math.max(leaseCount, 1);
+							System.out.println(getName() + " recommended leasing " + leaseCount);
 							headNode.leaseWorker();
 						}
 						
 						// Decide on releasing nodes
-						Boolean[] releaseConds = releaseConditions(); 
+						Boolean releaseConds = releaseConditions(); 
 						if (any(releaseConds))
 						{
-							System.out.println(getName() + " recommended releasing: " + arrayToString(releaseConds));
+							System.out.println(getName() + " recommended releasing");
 							headNode.decommissionRandom();
 						}
 					}
