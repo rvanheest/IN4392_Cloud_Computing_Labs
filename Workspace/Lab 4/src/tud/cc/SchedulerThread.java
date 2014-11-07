@@ -76,6 +76,7 @@ public class SchedulerThread
 						catch (IllegalAccessException e) 
 						{
 							// Job was rejected. Re-queue job
+							// TODO this actually occurs
 							jobQueue.putLast(task);
 							// Print error; This error should not occur.
 							e.printStackTrace();
