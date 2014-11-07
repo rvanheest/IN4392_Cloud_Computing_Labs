@@ -19,11 +19,9 @@ public class BlockingQueueLengthScheduler implements Scheduler {
 		List<Task> reject = new ArrayList<>();
 
 		if (workers.isEmpty()) {
-			System.out.println("\tno workers");
 			return new SchedulerResponse(result, new ArrayList<>(tasks));
 		}
 		else if (tasks.isEmpty()) {
-			System.out.println("\tno tasks");
 			return new SchedulerResponse(result);
 		}
 		else {
