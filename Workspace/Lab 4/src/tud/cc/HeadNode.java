@@ -146,8 +146,13 @@ public class HeadNode
 					{
 						case "workers":
 						case "w":
+							System.out.println("Workers: ");
 							for (Entry<String, WorkerHandle> entry : workerPool.entrySet())
-								System.out.println(entry.getValue());
+								System.out.println(" - " + entry.getValue());
+							System.out.println("Incoming: ");
+							for (NodeDetails entry : expectedWorkerDetails.values())
+								if (entry != null)
+									System.out.println(" - " + entry.getNodePrivateIP());
 							break;
 						case "worker-details":
 							for (String details : expectedWorkerDetails.keySet())
@@ -163,10 +168,11 @@ public class HeadNode
 								System.out.println(job);
 							break;
 						case "workload":
+						case "wl":
 							Sample lastSample = this.monitorThread.getHistory(1).get(0);
 							System.out.println("Workload: " + lastSample.getWorkload()
 												+ " - Smooth: " + lastSample.getSmoothWorkload() + "\n"
-												+ " - Promise: " + lastSample.getPromisedWorkload()
+												+ "Promise: " + lastSample.getPromisedWorkload()
 												+ " - SmoothPromise: " + lastSample.getSmoothPromisedWorkload());
 							break;
 						case "lease":
