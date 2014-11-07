@@ -9,24 +9,53 @@ public class Sample
 	public final long schedulingDelay;
 	public final int coresLeased;
 	public final int workersLeased;
+	public final int workerUnderWay;
 	public final int jobsInWorkers;
 	public final int jobsIn;
 	public final int jobsOut;
 	
-	public Sample(int queueSize, long schedulingDelay, int coresLeased, int workersLeased, int jobsInWorkers, int jobsIn, int jobsOut)
+	private double processedWorkload = -1;
+	
+	/**
+	 * 
+	 * @param queueSize
+	 * @param schedulingDelay
+	 * @param coresLeased
+	 * @param workersLeased
+	 * @param workersUnderWay
+	 * @param jobsInWorkers
+	 * @param jobsIn
+	 * @param jobsOut
+	 */
+	public Sample(int queueSize, long schedulingDelay, int coresLeased, int workersLeased,
+			int workersUnderWay, int jobsInWorkers, int jobsIn, int jobsOut)
 	{
 		this.queueSize = queueSize;
 		this.schedulingDelay = schedulingDelay;
 		this.coresLeased = coresLeased;
 		this.workersLeased = workersLeased;
+		this.workerUnderWay = workersUnderWay;
 		this.jobsInWorkers = jobsInWorkers;
 		this.jobsIn = jobsIn;
 		this.jobsOut = jobsOut;
 	}
 	
+	
 	public double getWorkload()
 	{
+		if (coresLeased == 0)
+			return 0;
 		return ((double)(jobsInWorkers + queueSize)) / coresLeased;
+	}
+	
+	public double getProcessedWorkload()
+	{
+		return this.processedWorkload;
+	}
+	
+	public void setProcessedWorkload(double processedWorkload)
+	{
+		this.processedWorkload = processedWorkload;
 	}
 	
 	public Object[] toParts()
@@ -37,9 +66,12 @@ public class Sample
 			schedulingDelay,
 			coresLeased,
 			workersLeased,
+			workerUnderWay,
 			jobsInWorkers,
 			jobsIn,
-			jobsOut
+			jobsOut,
+			getWorkload(),
+			getProcessedWorkload()
 		};
 	}
 	

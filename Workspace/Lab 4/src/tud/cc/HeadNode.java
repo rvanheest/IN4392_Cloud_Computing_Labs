@@ -163,16 +163,21 @@ public class HeadNode
 								System.out.println(job);
 							break;
 						case "workload":
-							System.out.println(this.takeSample().getWorkload());
+							Sample lastSample = this.monitorThread.getHistory(1).get(0);
+							System.out.println("Workload: " + lastSample.getWorkload()
+												+ " - Processed: " + lastSample.getProcessedWorkload());
 							break;
 						case "lease":
 							System.out.println("Leasing a new worker...");
-							NodeDetails workerDetails = startWorker();
+							NodeDetails workerDetails = leaseWorker();
 							System.out.println("Leased: " + workerDetails);
 							break;
 						case "release":
 							WorkerHandle handle = workerPool.get(tokens[1]);
 							handle.close();
+							break;
+						case "leasing":
+							System.out.println("Leasing: " + this.isLeasing());
 							break;
 						case "sample":
 							System.out.println(this.takeSample());
@@ -215,7 +220,7 @@ public class HeadNode
 	 * Deploys a new node and returns the IP of the node
 	 * @return The details of the node just deployed
 	 */
-	public synchronized NodeDetails startWorker()
+	public synchronized NodeDetails leaseWorker()
 	{
 		this.expectedWorkerDetails.put("Pending", null);
 		
@@ -272,6 +277,7 @@ public class HeadNode
 				(queueHead != null) ? System.currentTimeMillis() - queueHead.getTimeQueued() : 0,
 				cores,
 				workerPool.size(),
+				expectedWorkerDetails.size(),
 				jobsInWorkers,
 				jobsIn,
 				jobsOut
