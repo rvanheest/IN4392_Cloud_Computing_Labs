@@ -145,7 +145,7 @@ At the head node, the result is received over the socket  by the {\verb WorkerHa
 \subsection{Architectural improvements}
 The architecture described above is what the application currently looks like. However, this does not fully satisfy the redundancy requirement. This is due to this project's deadline. In the following we describe what to change in and add to the architecture to fully support this requirement.
 
-\textcolor{red}{describe what happens when a worker fails during execution. How is this detected and how is the head node responding to that? Also mention that we assume the head node to not fail.}
+\textcolor{red}{@Chris, describe what happens when a worker fails during execution. How is this detected and how is the head node responding to that? Also mention that we assume the head node to not fail.}
 
 \subsection{System policies}
 \label{subsec:policies}
@@ -154,15 +154,17 @@ The architecture described above is what the application currently looks like. H
 When it comes to scheduling tasks or leasing and releasing workers, the approach can influence the performance of the whole system. In this section we discuss the different policies we created for both scheduling, leasing and releasing.
 
 \subsubsection*{Scheduling policies}
+Every scheduling policy implementation receives a list of tasks to be scheduled as well as a list of eligible workers and has to return both an allocation plan and a list of unscheduled tasks.
+
 \ldots
 
 \subsubsection*{Leasing and releasing policies}
-\ldots
+\textcolor{red}{@Chris, can you write this?}
 
 
 \subsection{Additional System Features}
 \label{subsec:additionalFeatures}
-\textcolor{red}{Additional features}
+\textcolor{red}{@Chris, Additional features: can you check which ones we have to write about?}
 \ldots
 \subsubsection{Feature 1}
 \ldots
