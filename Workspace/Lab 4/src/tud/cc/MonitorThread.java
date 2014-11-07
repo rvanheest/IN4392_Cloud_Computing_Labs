@@ -72,7 +72,7 @@ public class MonitorThread
 		
 		// Condition 4: workload over 80%
 		boolean cond4 = true;
-		cond4 = samples.getLast().getProcessedWorkload() > 0.8;
+		cond4 = samples.getLast().getSmoothPromisedWorkload() > 0.8;
 		
 		
 		return new Boolean[] {
@@ -103,7 +103,7 @@ public class MonitorThread
 		
 		// Condition 2: Workload below 50% (more than 2 workers)
 		boolean cond2 = false;
-		cond2 = samples.getLast().getProcessedWorkload() < 0.5
+		cond2 = samples.getLast().getSmoothPromisedWorkload() < 0.5
 				&& workers.size() > 2;
 		
 		
@@ -174,6 +174,7 @@ public class MonitorThread
 						if (any(leaseConds))
 						{
 							System.out.println(getName() + " recommended leasing: " + arrayToString(leaseConds));
+							// TODO lease more than one
 							headNode.leaseWorker();
 						}
 						
@@ -206,10 +207,9 @@ public class MonitorThread
 	{
 		Sample nextSample = headNode.takeSample();
 		if (samples.size() > 0)
-			nextSample.setProcessedWorkload(0.8*samples.getLast().getProcessedWorkload() + 0.2*nextSample.getWorkload());
-		else
-			nextSample.setProcessedWorkload(nextSample.getWorkload());
-		this.samples.add(nextSample);
+			nextSample.setSmoothing(samples.getLast());
+		this.samples.addLast(nextSample);
+		
 		CSVWriter.getSamples().writeLine(nextSample.toParts());
 	}
 	
