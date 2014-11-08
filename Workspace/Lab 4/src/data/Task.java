@@ -172,6 +172,7 @@ public class Task
 				+ steps[1] + ", "
 				+ steps[2] + ", "
 				+ steps[3] + ", "
+				+ "W" + (this.timeWorkerProcessed-this.timeWorkerReceived)
 		+ "]";
 	}
 	
