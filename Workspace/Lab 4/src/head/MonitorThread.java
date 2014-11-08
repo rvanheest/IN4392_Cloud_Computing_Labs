@@ -167,7 +167,8 @@ public class MonitorThread
 					int leaseCount = samplingThread.getMostRecent().workersLeased / 4;
 					leaseCount = Math.max(leaseCount, 1);
 					System.out.println(getName() + " recommended leasing " + leaseCount);
-					headNode.leaseWorker();
+					for (int i=0 ; i<leaseCount ; i++)
+						headNode.leaseWorker();
 				}
 				else if (any(releaseConds))
 				{
