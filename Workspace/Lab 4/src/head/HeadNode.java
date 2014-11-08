@@ -232,9 +232,18 @@ public class HeadNode
 	{
 		this.expectedWorkerDetails.put("Pending", null);
 		
-		NodeDetails details = getService().leaseNode(new Configurations("random", null));
-		this.expectedWorkerDetails.put(details.getNodePrivateIP().getHostAddress(), details);
-		this.expectedWorkerDetails.remove("Pending");
+		
+		NodeDetails details = null;
+		try
+		{
+			details = getService().leaseNode(new Configurations("random", null));
+			this.expectedWorkerDetails.put(details.getNodePrivateIP().getHostAddress(), details);
+			this.expectedWorkerDetails.remove("Pending");
+		}
+		catch (Exception e)
+		{
+			System.err.println("### Leasing failed: " + e.getMessage());
+		}
 		
 		return details;
 	}
