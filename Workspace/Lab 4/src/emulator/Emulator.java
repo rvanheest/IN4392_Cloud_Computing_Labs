@@ -1,5 +1,7 @@
 package emulator;
 
+import head.HeadNode;
+
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -27,7 +29,6 @@ import java.util.logging.SimpleFormatter;
 
 import javax.imageio.ImageIO;
 
-import tud.cc.HeadNode;
 import data.Timing;
 import emulator.experiments.ExperimentSetups;
 

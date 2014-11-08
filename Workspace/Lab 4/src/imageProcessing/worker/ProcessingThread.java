@@ -1,5 +1,6 @@
 package imageProcessing.worker;
 
+import head.Utils;
 import imageProcessing.Burn;
 import imageProcessing.Combine;
 import imageProcessing.FlipHorizontal;
@@ -13,7 +14,6 @@ import java.awt.image.BufferedImage;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 
-import tud.cc.Utils;
 import data.Task;
 
 class ProcessingThread extends Thread {
