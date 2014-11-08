@@ -167,26 +167,23 @@ public class MonitorThread
 				{
 					lastDecision = System.currentTimeMillis();
 					
-					if (!headNode.isLeasing())
+					// Decide on leasing nodes
+					Boolean leaseConds = leaseConditions(); 
+					if (any(leaseConds))
 					{
-						// Decide on leasing nodes
-						Boolean leaseConds = leaseConditions(); 
-						if (any(leaseConds))
-						{
-							// Increase workforce by 25% every time it is insufficient
-							int leaseCount = samples.getLast().workersLeased / 4;
-							leaseCount = Math.max(leaseCount, 1);
-							System.out.println(getName() + " recommended leasing " + leaseCount);
-							headNode.leaseWorker();
-						}
-						
-						// Decide on releasing nodes
-						Boolean releaseConds = releaseConditions(); 
-						if (any(releaseConds))
-						{
-							System.out.println(getName() + " recommended releasing");
-							headNode.decommissionRandom();
-						}
+						// Increase workforce by 25% every time it is insufficient
+						int leaseCount = samples.getLast().workersLeased / 4;
+						leaseCount = Math.max(leaseCount, 1);
+						System.out.println(getName() + " recommended leasing " + leaseCount);
+						headNode.leaseWorker();
+					}
+					
+					// Decide on releasing nodes
+					Boolean releaseConds = releaseConditions(); 
+					if (any(releaseConds))
+					{
+						System.out.println(getName() + " recommended releasing");
+						headNode.decommissionRandom();
 					}
 				}
 				
