@@ -67,7 +67,7 @@ public class MonitorThread
 		
 		// Condition 1: there are no workers
 		boolean cond1 = false;
-		if (workers.size() == 0)
+		if (workers.size() == 0 && !headNode.isLeasing())
 			cond1 = true;
 		
 		// Condition 2: workload over 80%
@@ -169,6 +169,9 @@ public class MonitorThread
 					
 					// Decide on leasing nodes
 					Boolean leaseConds = leaseConditions(); 
+					// Decide on releasing nodes
+					Boolean releaseConds = releaseConditions(); 
+					
 					if (any(leaseConds))
 					{
 						// Increase workforce by 25% every time it is insufficient
@@ -177,10 +180,7 @@ public class MonitorThread
 						System.out.println(getName() + " recommended leasing " + leaseCount);
 						headNode.leaseWorker();
 					}
-					
-					// Decide on releasing nodes
-					Boolean releaseConds = releaseConditions(); 
-					if (any(releaseConds))
+					else if (any(releaseConds))
 					{
 						System.out.println(getName() + " recommended releasing");
 						headNode.decommissionRandom();
