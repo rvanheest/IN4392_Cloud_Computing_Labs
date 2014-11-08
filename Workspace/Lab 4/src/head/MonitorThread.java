@@ -18,34 +18,23 @@ public class MonitorThread
 	
 	private final HeadNode headNode;
 	
-	private final LinkedList<Sample> samples = new LinkedList<>();
+	//private final LinkedList<Sample> samples = new LinkedList<>();
+	final SamplingThread samplingThread;
 	
 
 	public List<Sample> getHistory()
 	{
-		return Collections.unmodifiableList(samples);
+		return samplingThread.getHistory();
 	}
 	
 	public List<Sample> getHistory(int window)
 	{
-		List<Sample> history = getHistory();
-		window = Math.min(window, history.size());
-		return history.subList(history.size()-window, history.size());
+		return samplingThread.getHistory(window);
 	}
 	
 	public List<Sample> getHistory(int window, long millisago)
 	{
-		long after = System.currentTimeMillis() - millisago;
-		
-		window = Math.min(window, samples.size());
-		List<Sample> history = samples.subList(samples.size()-window, samples.size());
-		
-		ArrayList<Sample> filter = new ArrayList<>();
-		for (Sample sample : history)
-			if (sample.timestamp > after )
-				filter.add(sample);
-		
-		return Collections.unmodifiableList(filter);
+		return samplingThread.getHistory(window, millisago);
 	}
 	
 	
@@ -54,6 +43,9 @@ public class MonitorThread
 		super("MonitorThread");
 		
 		this.headNode = headNode;
+		this.samplingThread = new SamplingThread(headNode);
+		
+		this.samplingThread.start();
 	}
 	
 	
@@ -72,7 +64,7 @@ public class MonitorThread
 		
 		// Condition 2: workload over 80%
 		boolean cond2 = true;
-		cond2 = samples.getLast().getSmoothPromisedWorkload() > 0.8;
+		cond2 = samplingThread.getMostRecent().getSmoothPromisedWorkload() > 0.8;
 		
 		
 		return any(new Boolean[] {
@@ -159,35 +151,29 @@ public class MonitorThread
 			long lastDecision = 0;
 			while (!closing)
 			{
-				// Sample the state of the system
-				sampleState();
-				
 				// Make decision every decisionInterval milliseconds
-				if (lastDecision + decisionInterval < System.currentTimeMillis())
-				{
-					lastDecision = System.currentTimeMillis();
-					
-					// Decide on leasing nodes
-					Boolean leaseConds = leaseConditions(); 
-					// Decide on releasing nodes
-					Boolean releaseConds = releaseConditions(); 
-					
-					if (any(leaseConds))
-					{
-						// Increase workforce by 25% every time it is insufficient
-						int leaseCount = samples.getLast().workersLeased / 4;
-						leaseCount = Math.max(leaseCount, 1);
-						System.out.println(getName() + " recommended leasing " + leaseCount);
-						headNode.leaseWorker();
-					}
-					else if (any(releaseConds))
-					{
-						System.out.println(getName() + " recommended releasing");
-						headNode.decommissionRandom();
-					}
-				}
+				sleep(decisionInterval);
 				
-				sleep(1000);
+				lastDecision = System.currentTimeMillis();
+				
+				// Decide on leasing nodes
+				Boolean leaseConds = leaseConditions(); 
+				// Decide on releasing nodes
+				Boolean releaseConds = releaseConditions(); 
+				
+				if (any(leaseConds))
+				{
+					// Increase workforce by 25% every time it is insufficient
+					int leaseCount = samplingThread.getMostRecent().workersLeased / 4;
+					leaseCount = Math.max(leaseCount, 1);
+					System.out.println(getName() + " recommended leasing " + leaseCount);
+					headNode.leaseWorker();
+				}
+				else if (any(releaseConds))
+				{
+					System.out.println(getName() + " recommended releasing");
+					headNode.decommissionRandom();
+				}
 			}
 		}
 		catch (InterruptedException e) 
@@ -195,27 +181,14 @@ public class MonitorThread
 			if (!closing)
 				e.printStackTrace();
 		} 
-		catch (FileNotFoundException | UnsupportedEncodingException e)
-		{
-			e.printStackTrace();
-		} 
 	}
 
 
-	private void sampleState() throws FileNotFoundException, UnsupportedEncodingException 
-	{
-		Sample nextSample = headNode.takeSample();
-		if (samples.size() > 0)
-			nextSample.setSmoothing(samples.getLast());
-		this.samples.addLast(nextSample);
-		
-		CSVWriter.getSamples().writeLine(nextSample.toParts());
-	}
-	
-	
 	@Override
 	public void close() throws Exception 
 	{
+		this.samplingThread.close();
+		
 		this.closing = true;
 		this.interrupt();
 		
