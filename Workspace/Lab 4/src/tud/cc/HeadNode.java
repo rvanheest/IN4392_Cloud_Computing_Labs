@@ -249,6 +249,8 @@ public class HeadNode
 		if (this.workerPool.size() < 1)
 			throw new IllegalStateException("Cannot decommission worker because there are no workers");
 		
+		// TODO decommission worker with no work
+		
 		String worker = this.workerPool.keys().nextElement();
 		WorkerHandle handle = this.workerPool.get(worker);
 		this.workerPool.remove(worker);
