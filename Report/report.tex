@@ -175,9 +175,9 @@ We base our decisions for leasing and releasing machines on metric $SPW$. More s
 
 \subsection{Additional System Features}
 \label{subsec:additionalFeatures}
-\textcolor{red}{These only include the multi-tenancy}
+The additional feature covered in this prototype that was not required in the set of basic requirements is multi-tenancy. This term is defined as an IT sharing model of how physical and virtual resources are used by possibly concurrent tenants. In our application this means that multiple users can concurrently use the system, all connect to the head node, send in their workloads and all receive back their own result without seeing any results of other users.
 
-\ldots
+In the research field of multi-tenancy, this brings up the philosophical question of fairness. Is it fair to discriminate between users that are very active and send in workloads more regularly than others or should a less active user have a higher priority? In this prototype we decided not to get into this discussion, just treating every user equal, using the policy of First-Come, First-Serve.
 
 \section{Experiments}
 \label{sec:experiments}
