@@ -40,6 +40,8 @@ public class Task
 		
 		this.timeQueued = t.timeQueued;
 		this.timeScheduled = t.timeScheduled;
+		this.timeWorkerProcessStarted = t.timeWorkerProcessStarted;
+		this.timeWorkerProcessEnded = t.timeWorkerProcessEnded;
 		this.timeWorkerDelivered = t.timeWorkerDelivered;
 		this.timeWorkerReceived = t.timeWorkerReceived;
 		this.timeServed = t.timeServed;
