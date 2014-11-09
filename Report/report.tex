@@ -49,7 +49,7 @@ Alexey Ilyushkin\\
 \maketitle
 
 \begin{abstract}
-In this report we describe our findings of 1 month of research in the area of cloud computing. We build a small prototype of a IaaS-based application that does image processing using the Amazon Web Services (AWS) EC2 cloud platform. The main features of this prototype are automation, scalability, load balancing, reliability and monitoring. We measured the performance of the system by applying metrics like \textcolor{red}{TODO \ldots}
+In this report we describe our findings of 1 month of research in the area of cloud computing. We build a small prototype of a IaaS-based application that does image processing using the Amazon Web Services (AWS) EC2 cloud platform. To solve issues like scalability and load balancing, we developed and compared several policies. The main features of this prototype are automation, scalability, load balancing, reliability and monitoring. Furthermore we measured the performance of the system by applying metrics like \textcolor{red}{TODO \ldots}
 \end{abstract}
 
 \section{Introduction}
@@ -74,15 +74,13 @@ In this report we will focus on IaaS cloud computing especially, as requested to
 	\item[TODO] \textbf{\textit{\underline{additional features???}}}
 \end{description}
 
-The prototype to be implemented will be an application that receives pictures from an external source (for example a web form where users can submit their pictures), performs some operations on them and returns the processed pictures. These operations may vary from lightweight operations such as a flip of the picture to applying a Fourier transformation.
+The prototype to be implemented will be an application that receives pictures from an external source (for example a web form where users can submit their pictures), performs some operations on them and returns the processed pictures. These operations may vary from lightweight operations such as a flip of the picture to heavier operations like Fourier transform.
 
-The application is set up in such a way that all pictures are received at a head node, which allocates them to one of the worker node in its resource pool and leases new machines or releases idle machines when appropriate. For fault tolerance reasons, the allocated picture is temporarily stored on the head node until its processed counterpart is received back in the head node, such that in the case of a failing worker node, the picture can be reallocated.
-
-\textcolor{red}{TODO allocation policies, lease/release policies, communication, monitoring, head-node-never-fails-assumption?, \ldots}
+The application is set up in such a way that all pictures are received at a head node, which allocates them to one of the worker node in its resource pool and leases new machines or releases idle machines when appropriate. We present and compare multiple policies for these problems.
 
 This report is structured as follows: first we will discuss the background of the application in \cref{sec:background}. What does it do in detail? What are its requirements and features? This is followed by the system design in \cref{sec:design}, where we focus on the internal workings of the application as well as several policies for both the processes of allocation and leasing/releasing nodes. We evaluate the application in \cref{sec:experiments} by applying several metrics. Finally we close the report with a discussion (\cref{sec:discussion}) and the conclusion (\cref{sec:conclusion}). In \cref{app:time} an overview of spent time is provided.
 
-\textcolor{red}{TODO Problem description, existing systems and/or tools, system to be implemented, structure of the rest of the paper}
+\textcolor{red}{TODO existing systems and/or tools}
 
 \section{Background of the application}
 \label{sec:background}
@@ -96,7 +94,7 @@ A second tier holds the elasticity (or scalability) of the system, which is dete
 
 Besides elasticity, load balancing is another topic of interest in cloud computing. When the head node receives a task, it needs to decide where it should be executed. Does it prefer certain workers, will it be assigned randomly or is there a better way to schedule a task. In this the head node might look at the size of the task, the length of the queue of each available worker or any other measurable property of the task and the workers.
 
-The fourth tier is the reliability of the system. As the application is mostly autonomous, it also needs to be able to recover itself from failure. A failure might be losing connection between the head node and one or more workers, crashing the head or a worker, IO failure, etc. For this project we make the assumption that the head node never crashes and \textcolor{red}{complete this when we implemented this}.
+The fourth tier is the reliability of the system. As the application is mostly autonomous, it also needs to be able to recover itself from failure. A failure might be losing connection between the head node and one or more workers, crashing the head or a worker, IO failure, etc. For this project we make the assumption that the head node never crashes and \textcolor{red}{@Chris complete this when we implemented this}.
 
 Finally, a system isn't a good system without a monitoring module. To make decisions in the other tiers (especially elasticity and load balancing), we need to supply it with proper data, for example the length of each worker's queue, the number of incoming tasks in the system, etc. Also for the research part of this project the monitoring module is used. This is used to gain the results in \cref{sec:experiments}.
 
@@ -164,13 +162,10 @@ The previous policies might be used when the scheduler for particular reasons is
 
 A policy that takes this processing length into account is the \texttt{QueuePixelScheduler}. This is a somewhat special policy for our case of image processing that follows from the way our image processing works as well as from some initial experimental work, which is described in \textcolor{red}{refer to the experiments} and can be summarized by the conclusion that the number of pixels in a picture is proportional to the processing time of that picture. Therefore this policy modifies the \texttt{QueueLengthScheduler} by taking into account \textit{the number of pixels} rather than \textit{the number of tasks} in a particular worker.
 
-Until this point all policies have allocated all the provided tasks to eligible workers. We defined the eligibility of a worker as not being flagged for decommission. However, when we extend this definition by following the philosophy that a worker should only have $2n$ tasks in its system ($n$ tasks in process and $n$ tasks in its queue, where $n$ is the number of processors in that worker node), we end up with a smaller set of workers that are available to receive new tasks. This means that the tasks stay in the head node as long as possible, rather than waiting in a queue in the worker node, which has the advantage that the worker can focus more of its time on processing the tasks rather then being busy with receiving tasks in its queue. Therefore the internal memory of the worker nodes can be used more for the execution of the tasks rather than storing dozens of next jobs. Besides that, using this type of policies makes the system easier to recover from a failing worker, since there are only two tasks in that worker that need to be rescheduled. We applied this paradigm to the \texttt{QueueLengthScheduler} and the \texttt{QueuePixelScheduler} and used this in the experiments presented in \cref{sec:experiments}. 
-
-
+Until this point all policies have allocated all the provided tasks to eligible workers. We defined the eligibility of a worker as not being flagged for decommission. However, when we extend this definition by following the philosophy that a worker should only have $2n$ tasks in its system ($n$ tasks in process and $n$ tasks in its queue, where $n$ is the number of processors in that worker node), we end up with a smaller set of workers that are available to receive new tasks. This means that the tasks stay in the head node as long as possible, rather than waiting in a queue in the worker node, which has the advantage that the worker can focus more of its time on processing the tasks rather then being busy with receiving tasks in its queue. Therefore the internal memory of the worker nodes can be used more for the execution of the tasks rather than storing dozens of next jobs. Besides that, using this type of policies makes the system easier to recover from a failing worker, since there are only two tasks in that worker that need to be rescheduled. We applied this paradigm to the \texttt{QueueLengthScheduler} and the \texttt{QueuePixelScheduler} and used this in the experiments presented in \cref{sec:experiments}.
 
 \subsubsection*{Leasing and releasing policies}
 \textcolor{red}{@Chris, can you write this?}
-
 
 \subsection{Additional System Features}
 \label{subsec:additionalFeatures}
