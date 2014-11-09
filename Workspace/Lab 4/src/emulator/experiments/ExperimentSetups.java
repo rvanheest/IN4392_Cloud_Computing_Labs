@@ -15,6 +15,11 @@ public enum ExperimentSetups {;
 			ConcurrentMap<UUID, Long> sendTimes, List<BufferedImage> images) {
 		return template(out, sendTimes, images, exp1Users());
 	}
+	
+	public static Iterable<EmulatedUserThread> experiment2(ObjectOutputStream out,
+			ConcurrentMap<UUID, Long> sendTimes, List<BufferedImage> images) {
+		return template(out, sendTimes, images, exp2Users());
+	}
 
 	private static Iterable<EmulatedUserThread> template(ObjectOutputStream out,
 			ConcurrentMap<UUID, Long> sendTimes, List<BufferedImage> images,
@@ -30,5 +35,15 @@ public enum ExperimentSetups {;
 	
 	private static Collection<EmulatedUser> exp1Users() {
 		return Arrays.asList(new EmulatedUser(0, 100, 1000));
+	}
+	
+	
+	private static Collection<EmulatedUser> exp2Users() {
+		return Arrays.asList(
+			new EmulatedUser(0		, 200, 	5000), 	// 0 		- 1_000_000
+			new EmulatedUser(50_000	, 100,	5000),  // 50_000 	- 550_000
+			new EmulatedUser(200_000, 10, 	500),  	// 200_000 	- 205_000
+			new EmulatedUser(80_000	, 20, 	5000)	// 80_000 	- 180_000
+		);
 	}
 }

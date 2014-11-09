@@ -145,6 +145,9 @@ public class Emulator implements AutoCloseable {
 									new ExperimentOutputThread(ExperimentSetups.experiment1(
 											this.out, this.sendTimes, this.images)).start();
 									break;
+								case 2:
+									new ExperimentOutputThread(ExperimentSetups.experiment2(
+											this.out, this.sendTimes, this.images)).start();
 								default:
 									System.out.println("experiment is not found");
 							}
