@@ -41,7 +41,8 @@ public class RandomOutputThread extends Thread {
 				UUID uuid = UUID.randomUUID();
 				Request request = new Request(uuid, bytesToBeSend, image.getHeight() * image.getWidth());
 
-				System.out.println("EMULATOR_OUTPUT - sending image: " + request);
+				//System.out.println("EMULATOR_OUTPUT - sending image: " + request);
+				System.out.println("OUT: remaining " + this.num);
 				synchronized (this.out) {
 					this.out.writeObject(request);
 				}
