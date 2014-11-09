@@ -1,4 +1,4 @@
-package tud.cc;
+package head;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;

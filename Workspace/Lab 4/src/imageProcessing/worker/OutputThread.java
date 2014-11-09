@@ -22,7 +22,7 @@ class OutputThread extends Thread {
 		try {
 			while (true) {
 				Task task = this.outputQueue.take();
-				task.workerProcessed();
+				task.workerDelivered();
 				System.out.println("CLIENT_OUTPUT - received image: " + task.getImage().length);
 				this.out.writeObject(task);
 			}

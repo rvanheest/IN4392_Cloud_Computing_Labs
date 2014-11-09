@@ -1,5 +1,7 @@
 package scheduler;
 
+import head.WorkerHandle;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -8,22 +10,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 
-import tud.cc.WorkerHandle;
 import data.Task;
 
 public class BlockingQueueLengthScheduler implements Scheduler {
 
+	private static final int factor = 1;
+	
 	@Override
 	public SchedulerResponse schedule(List<Task> tasks, Collection<WorkerHandle> workers) {
 		Map<Task, WorkerHandle> result = new HashMap<>();
 		List<Task> reject = new ArrayList<>();
 
 		if (workers.isEmpty()) {
-			System.out.println("\tno workers");
 			return new SchedulerResponse(result, new ArrayList<>(tasks));
 		}
 		else if (tasks.isEmpty()) {
-			System.out.println("\tno tasks");
 			return new SchedulerResponse(result);
 		}
 		else {
@@ -41,7 +42,7 @@ public class BlockingQueueLengthScheduler implements Scheduler {
 			for (Task task : tasks) {
 				if (!bestFull) {
     				WorkerHandleWrapper worker = workersQueue.poll();
-    				if (worker.queueLength <= 2 * worker.getWorker().handshake.cores) {
+    				if (worker.queueLength <= factor * worker.getWorker().handshake.cores) {
     					result.put(task, worker.getWorker());
         				workersQueue.add(worker.incrementQueueLength());
     				}
@@ -99,8 +100,8 @@ public class BlockingQueueLengthScheduler implements Scheduler {
 			int size1 = worker1.getQueueLength();
 			int size2 = worker2.getQueueLength();
 			
-			int threshold1 = 2 * worker1.getWorker().handshake.cores;
-			int threshold2 = 2 * worker2.getWorker().handshake.cores;
+			int threshold1 = factor * worker1.getWorker().handshake.cores;
+			int threshold2 = factor * worker2.getWorker().handshake.cores;
 
 			if (size1 == 0) {
 				if (size2 == 0) {

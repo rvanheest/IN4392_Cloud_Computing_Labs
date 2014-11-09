@@ -1,11 +1,12 @@
 package emulator;
 
+import head.Utils;
+
 import java.awt.image.BufferedImage;
 import java.io.ObjectOutputStream;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
-import tud.cc.Utils;
 import data.Request;
 
 public class AllOutputThread extends Thread {

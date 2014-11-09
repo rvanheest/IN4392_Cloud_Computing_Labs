@@ -1,4 +1,4 @@
-package tud.cc;
+package head;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -146,8 +146,13 @@ public class HeadNode
 					{
 						case "workers":
 						case "w":
+							System.out.println("Workers: ");
 							for (Entry<String, WorkerHandle> entry : workerPool.entrySet())
-								System.out.println(entry.getValue());
+								System.out.println(" - " + entry.getValue());
+							System.out.println("Incoming: ");
+							for (NodeDetails entry : expectedWorkerDetails.values())
+								if (entry != null)
+									System.out.println(" - " + entry.getNodePrivateIP());
 							break;
 						case "worker-details":
 							for (String details : expectedWorkerDetails.keySet())
@@ -163,9 +168,12 @@ public class HeadNode
 								System.out.println(job);
 							break;
 						case "workload":
+						case "wl":
 							Sample lastSample = this.monitorThread.getHistory(1).get(0);
 							System.out.println("Workload: " + lastSample.getWorkload()
-												+ " - Processed: " + lastSample.getProcessedWorkload());
+												+ " - Smooth: " + lastSample.getSmoothWorkload() + "\n"
+												+ "Promise: " + lastSample.getPromisedWorkload()
+												+ " - SmoothPromise: " + lastSample.getSmoothPromisedWorkload());
 							break;
 						case "lease":
 							System.out.println("Leasing a new worker...");
@@ -224,9 +232,18 @@ public class HeadNode
 	{
 		this.expectedWorkerDetails.put("Pending", null);
 		
-		NodeDetails details = getService().leaseNode(new Configurations("random", null));
-		this.expectedWorkerDetails.put(details.getNodePrivateIP().getHostAddress(), details);
-		this.expectedWorkerDetails.remove("Pending");
+		
+		NodeDetails details = null;
+		try
+		{
+			details = getService().leaseNode(new Configurations("random", null));
+			this.expectedWorkerDetails.put(details.getNodePrivateIP().getHostAddress(), details);
+			this.expectedWorkerDetails.remove("Pending");
+		}
+		catch (Exception e)
+		{
+			System.err.println("### Leasing failed: " + e.getMessage());
+		}
 		
 		return details;
 	}
@@ -240,6 +257,8 @@ public class HeadNode
 	{
 		if (this.workerPool.size() < 1)
 			throw new IllegalStateException("Cannot decommission worker because there are no workers");
+		
+		// TODO decommission worker with no work
 		
 		String worker = this.workerPool.keys().nextElement();
 		WorkerHandle handle = this.workerPool.get(worker);

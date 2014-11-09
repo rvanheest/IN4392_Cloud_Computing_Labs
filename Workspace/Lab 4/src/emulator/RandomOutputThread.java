@@ -1,5 +1,7 @@
 package emulator;
 
+import head.Utils;
+
 import java.awt.image.BufferedImage;
 import java.io.ObjectOutputStream;
 import java.util.List;
@@ -7,7 +9,6 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
-import tud.cc.Utils;
 import data.Request;
 
 public class RandomOutputThread extends Thread {
@@ -40,7 +41,8 @@ public class RandomOutputThread extends Thread {
 				UUID uuid = UUID.randomUUID();
 				Request request = new Request(uuid, bytesToBeSend, image.getHeight() * image.getWidth());
 
-				System.out.println("EMULATOR_OUTPUT - sending image: " + request);
+				//System.out.println("EMULATOR_OUTPUT - sending image: " + request);
+				System.out.println("OUT: remaining " + this.num);
 				synchronized (this.out) {
 					this.out.writeObject(request);
 				}

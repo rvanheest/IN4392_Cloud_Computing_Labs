@@ -1,5 +1,7 @@
 package imageProcessing.worker;
 
+import head.HeadNode;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -11,7 +13,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import data.Task;
-import tud.cc.HeadNode;
 
 public class Worker implements AutoCloseable {
 

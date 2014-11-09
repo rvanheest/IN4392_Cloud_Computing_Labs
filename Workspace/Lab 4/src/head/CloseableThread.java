@@ -1,4 +1,4 @@
-package tud.cc;
+package head;
 
 abstract class CloseableThread
 	extends Thread

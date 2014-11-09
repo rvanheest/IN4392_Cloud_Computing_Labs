@@ -1,4 +1,4 @@
-package tud.cc;
+package head;
 
 import java.io.IOException;
 import java.util.Map;
@@ -50,14 +50,7 @@ public class ResponderThread
 					System.out.println(getName() + " job completed " + task);
 					headnode.justOut(task);
 					CSVWriter.getJobs().writeLine(
-							task.getUuid(),
-							task.getImage().length,
-							task.getTimeQueued(),
-							task.getTimeScheduled(),
-							task.getTimeProcessed(),
-							task.getTimeServed(),
-							task.getTimeWorkerReceived(),
-							task.getTimeWorkerProcessed()							
+							task.toParts()					
 					);
 				}
 				catch (IOException e) 

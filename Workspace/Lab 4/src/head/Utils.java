@@ -1,4 +1,4 @@
-package tud.cc;
+package head;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;

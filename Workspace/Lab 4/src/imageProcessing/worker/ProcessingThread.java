@@ -1,5 +1,6 @@
 package imageProcessing.worker;
 
+import head.Utils;
 import imageProcessing.Burn;
 import imageProcessing.Combine;
 import imageProcessing.FlipHorizontal;
@@ -13,7 +14,6 @@ import java.awt.image.BufferedImage;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 
-import tud.cc.Utils;
 import data.Task;
 
 class ProcessingThread extends Thread {
@@ -33,6 +33,8 @@ class ProcessingThread extends Thread {
 		try {
 			while (true) {
 				Task inTask = this.inputQueue.take();
+				inTask.workerProcessStarted();
+				
 				byte[] imageBytes = inTask.getImage();
 				System.out.println("CLIENT_PROC - start: " + imageBytes.length);
 				BufferedImage image = Utils.toBufferedImage(imageBytes);
@@ -46,17 +48,20 @@ class ProcessingThread extends Thread {
 				Callable<BufferedImage> flipH = new FlipHorizontal(image);
 
 				Combine c1 = new Combine(gray, noise);
-				Combine c2 = new Combine(invert, burn);
+//				Combine c2 = new Combine(invert, burn);
 				Combine c3 = new Combine(c1, flipV);
-				Combine c4 = new Combine(c2, flipH);
-				Combine c5 = new Combine(c3, c4);
-				Combine c6 = new Combine(c5, gaus, 0.8);
-
-				BufferedImage res = c6.call(); // executing all the filters recursively
+//				Combine c4 = new Combine(c2, flipH);
+//				Combine c5 = new Combine(c3, c4);
+//				Combine c6 = new Combine(c5, gaus, 0.8);
+//
+//				BufferedImage res = c6.call(); // executing all the filters recursively
+				BufferedImage res = c3.call();
 				System.out.println("CLIENT_PROC - finished: " + imageBytes.length);
 
 				byte[] resBytes = Utils.toByteArray(res);
-				this.outputQueue.put(new Task(inTask, resBytes));
+				Task outTask = new Task(inTask, resBytes);
+				outTask.workerProcessEnded();
+				this.outputQueue.put(outTask);
 			}
 		}
 		catch (Exception e) {

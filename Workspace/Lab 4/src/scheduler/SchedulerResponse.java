@@ -1,10 +1,11 @@
 package scheduler;
 
+import head.WorkerHandle;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import tud.cc.WorkerHandle;
 import data.Task;
 
 public class SchedulerResponse {

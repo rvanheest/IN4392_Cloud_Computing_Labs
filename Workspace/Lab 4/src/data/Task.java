@@ -14,7 +14,9 @@ public class Task
 	private long timeQueued = -1;
 	private long timeScheduled = -1;
 	private long timeWorkerReceived = -1;
-	private long timeWorkerProcessed = -1;
+	private long timeWorkerProcessStarted = -1;
+	private long timeWorkerProcessEnded = -1;
+	private long timeWorkerDelivered = -1;
 	private long timeProcessed = -1;
 	private long timeServed = -1;
 	
@@ -38,7 +40,9 @@ public class Task
 		
 		this.timeQueued = t.timeQueued;
 		this.timeScheduled = t.timeScheduled;
-		this.timeWorkerProcessed = t.timeWorkerProcessed;
+		this.timeWorkerProcessStarted = t.timeWorkerProcessStarted;
+		this.timeWorkerProcessEnded = t.timeWorkerProcessEnded;
+		this.timeWorkerDelivered = t.timeWorkerDelivered;
 		this.timeWorkerReceived = t.timeWorkerReceived;
 		this.timeServed = t.timeServed;
 		
@@ -61,9 +65,17 @@ public class Task
 	public long getTimeScheduled() {
 		return timeScheduled;
 	}
+	
+	public long getTimeWorkerProcessStarted() {
+		return timeWorkerProcessStarted;
+	}
+	
+	public long getTimeWorkerProcessEnded() {
+		return timeWorkerProcessEnded;
+	}
 
-	public long getTimeWorkerProcessed() {
-		return timeWorkerProcessed;
+	public long getTimeWorkerDelivered() {
+		return timeWorkerDelivered;
 	}
 
 	public long getTimeWorkerReceived() {
@@ -102,9 +114,17 @@ public class Task
 	{
 		this.timeWorkerReceived = System.currentTimeMillis();
 	}
-	public void workerProcessed()
+	public void workerProcessStarted()
 	{
-		this.timeWorkerProcessed = System.currentTimeMillis();
+		this.timeWorkerProcessStarted = System.currentTimeMillis();
+	}
+	public void workerProcessEnded()
+	{
+		this.timeWorkerProcessEnded = System.currentTimeMillis();
+	}
+	public void workerDelivered()
+	{
+		this.timeWorkerDelivered = System.currentTimeMillis();
 	}
 	public void processed()
 	{
@@ -154,25 +174,62 @@ public class Task
 	}
 	
 	/**
+	 * 
+	 * @return
+	 */
+	public long[] stepsInWorker()
+	{
+		long[] steps =  new long[] 
+		{ 
+			this.timeWorkerProcessStarted - this.timeWorkerReceived,
+			this.timeWorkerProcessEnded - this.timeWorkerReceived,
+			this.timeWorkerDelivered - this.timeWorkerReceived,
+		};
+		for (int i=0 ; i<steps.length ; i++)
+			if (steps[i] < 0)
+				steps[i] = -1;
+		return steps;
+	}
+	
+	/**
 	 * Get the time that this image spent being processed
 	 * @return
 	 */
 	public long getWorkerProcessingTime()
 	{
-		return this.timeWorkerProcessed - this.timeWorkerReceived;
+		return this.timeWorkerDelivered - this.timeWorkerReceived;
 	}
 	
 	
 	@Override
 	public String toString() 
 	{
-		long[] steps = this.cumulativeStepsInHead();
+		long[] stepsHead = this.cumulativeStepsInHead();
 		return "[Job: " + this.uuid + ": " + this.image.length + "b: " 
-				+ steps[0] + ", "
-				+ steps[1] + ", "
-				+ steps[2] + ", "
-				+ steps[3] + ", "
+				+ stepsHead[0] + ", "
+				+ stepsHead[1] + ", "
+				+ stepsHead[2] + ", "
+				+ stepsHead[3] + ", "
+				+ "W" + (this.timeWorkerDelivered - this.timeWorkerReceived)
+				+ "(" + (this.timeWorkerProcessEnded - this.timeWorkerProcessStarted) +")"
 		+ "]";
+	}
+	
+	public Object[] toParts()
+	{
+		long[] stepsHead = this.stepsInHead();
+		long[] stepsWorker = this.stepsInWorker();
+		return new Object[] {
+			this.uuid,
+			this.px,
+			this.timeQueued,
+			stepsHead[0],
+			stepsHead[1],
+			stepsHead[2],
+			stepsWorker[0],
+			stepsWorker[1],
+			stepsWorker[2]
+		};
 	}
 	
 	@Override

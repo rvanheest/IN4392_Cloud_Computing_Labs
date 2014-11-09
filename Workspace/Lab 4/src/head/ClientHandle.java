@@ -1,11 +1,12 @@
-package tud.cc;
+package head;
+
+import head.ClientHandle;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 
-import tud.cc.ClientHandle;
 import data.Request;
 import data.Task;
 

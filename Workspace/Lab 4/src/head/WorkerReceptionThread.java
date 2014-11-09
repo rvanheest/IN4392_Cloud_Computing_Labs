@@ -1,4 +1,4 @@
-package tud.cc;
+package head;
 
 import java.io.IOException;
 import java.net.InetAddress;

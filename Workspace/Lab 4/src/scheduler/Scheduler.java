@@ -1,9 +1,10 @@
 package scheduler;
 
+import head.WorkerHandle;
+
 import java.util.Collection;
 import java.util.List;
 
-import tud.cc.WorkerHandle;
 import data.Task;
 
 /**

@@ -1,4 +1,4 @@
-package tud.cc;
+package head;
 
 import imageProcessing.worker.Worker;
 
