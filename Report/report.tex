@@ -162,7 +162,14 @@ Until this point all policies have allocated all the provided tasks to eligible 
 
 \subsubsection*{Leasing and releasing policies}
 
-To decide on scaling the system up or down, the state of the system is sampled in given intervals. The information gathered includes the amount of tasks in the queue, in each worker, the total number of cores available and the number of workers that have been requested but have not connected yet. With this information we construct a workload metric $W$, \textcolor{red}{which, as show in figure}, correlates with the scheduling delay: $$W = tasks/cores$$ where $tasks$ is the set of all the tasks in the queue and the workers, and $cores$ are the total number of available cores in the workers. Generally, when $W > 1$, the system has been receiving jobs faster than it can process them, while $0 < W < 1$ means that the system has enough resources.
+To decide on scaling the system up or down, the state of the system is sampled in given intervals. The information gathered includes the amount of tasks in the queue, in each worker, the total number of cores available and the number of workers that have been requested but have not connected yet. With this information we construct a workload metric $W$, which, as seen in one of our experiments in \cref{fig:scheduling-W}, predicts the scheduling delay: $$W = tasks/cores$$ where $tasks$ is the set of all the tasks in the queue and the workers, and $cores$ are the total number of available cores in the workers. Generally, when $W > 1$, the system has been receiving jobs faster than it can process them, while $0 < W < 1$ means that the system has enough resources.
+
+\begin{figure*}
+	\centering
+	\includegraphics[width=0.8 \linewidth]{SchedulingDelay-W.png}
+	\caption{The metric W correlates with scheduling delay}
+	\label{fig:scheduling-W}
+\end{figure*}
 
 We use $W$ to decide on leasing or releasing more workers. Because one worker takes a significant amount of time to boot and $W$ can be expected to stay above $1$ while the resources are under way, we introduce the metric of \textit{promised workload} which also considers booting machines: 
 $$PW = tasks/(cores + cores_{promised})$$
