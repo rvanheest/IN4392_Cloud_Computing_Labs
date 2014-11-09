@@ -182,8 +182,8 @@ public class Task
 		long[] steps =  new long[] 
 		{ 
 			this.timeWorkerProcessStarted - this.timeWorkerReceived,
-			this.timeWorkerProcessEnded - this.timeWorkerReceived,
-			this.timeWorkerDelivered - this.timeWorkerReceived,
+			this.timeWorkerProcessEnded - this.timeWorkerProcessStarted,
+			this.timeWorkerDelivered - this.timeWorkerProcessEnded,
 		};
 		for (int i=0 ; i<steps.length ; i++)
 			if (steps[i] < 0)
