@@ -163,6 +163,13 @@ Until this point all policies have allocated all the provided tasks to eligible 
 \subsubsection*{Leasing and releasing policies}
 \textcolor{red}{@Chris, can you write this?}
 
+To decide on scaling the system up or down, the state of the system is sampled in given intervals. The information gathered includes the amount of jobs in the queue, in each worker, the total number of cores available and the number of workers that have been requested but have not connected yet. With this information we construct a workload metric $W$, \textcolor{red}{which, as show in figure}, correlates with the scheduling delay: $$W = jobs/cores$$ where jobs are all the jobs in the queue and the workers, and cores are the total available cores in the workers. Generally, when $W > 1$, the system has been receiving jobs faster than it can process them, while $0 < W < 1$ means that the system has enough resources.
+
+We use $W$ to decide on leasing or releasing more workers. Because one worker takes a significant amount of time to boot and $W$ can be expected to stay above $1$ while the resources are under way, we introduce the metric of \textit{promised workload} which also considers booting machines: 
+$$PW = jobs/(cores + cores_{promised})$$
+With this metric we avoid the situation that the system will repeat resource requests, because machines are not ready yet. The last optimisation we attempted was to lessen our system's responsiveness to request spikes. Since workers take a while to boot, it is possible that the spike is already served by the time the workers become available, and thus the resources are not put to use. For that reason we reduce the responsiveness of the system using an exponential smoothing function
+$$SPW_{i+1} = s*SPW_{i} + (1-s)*PW{i+1}$$ where $0 \leq s \leq 1$ is the smoothing factor. We've set $s=0.95$
+
 \subsection{Additional System Features}
 \label{subsec:additionalFeatures}
 \textcolor{red}{These only include the multi-tenancy}
