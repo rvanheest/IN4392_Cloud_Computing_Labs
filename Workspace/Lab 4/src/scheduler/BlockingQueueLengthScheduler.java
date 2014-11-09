@@ -14,6 +14,8 @@ import data.Task;
 
 public class BlockingQueueLengthScheduler implements Scheduler {
 
+	private static final int factor = 1;
+	
 	@Override
 	public SchedulerResponse schedule(List<Task> tasks, Collection<WorkerHandle> workers) {
 		Map<Task, WorkerHandle> result = new HashMap<>();
@@ -40,7 +42,7 @@ public class BlockingQueueLengthScheduler implements Scheduler {
 			for (Task task : tasks) {
 				if (!bestFull) {
     				WorkerHandleWrapper worker = workersQueue.poll();
-    				if (worker.queueLength <= 2 * worker.getWorker().handshake.cores) {
+    				if (worker.queueLength <= factor * worker.getWorker().handshake.cores) {
     					result.put(task, worker.getWorker());
         				workersQueue.add(worker.incrementQueueLength());
     				}
@@ -98,8 +100,8 @@ public class BlockingQueueLengthScheduler implements Scheduler {
 			int size1 = worker1.getQueueLength();
 			int size2 = worker2.getQueueLength();
 			
-			int threshold1 = worker1.getWorker().handshake.cores;
-			int threshold2 = worker2.getWorker().handshake.cores;
+			int threshold1 = factor * worker1.getWorker().handshake.cores;
+			int threshold2 = factor * worker2.getWorker().handshake.cores;
 
 			if (size1 == 0) {
 				if (size2 == 0) {
