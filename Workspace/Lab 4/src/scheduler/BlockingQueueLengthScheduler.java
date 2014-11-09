@@ -98,8 +98,8 @@ public class BlockingQueueLengthScheduler implements Scheduler {
 			int size1 = worker1.getQueueLength();
 			int size2 = worker2.getQueueLength();
 			
-			int threshold1 = 2 * worker1.getWorker().handshake.cores;
-			int threshold2 = 2 * worker2.getWorker().handshake.cores;
+			int threshold1 = worker1.getWorker().handshake.cores;
+			int threshold2 = worker2.getWorker().handshake.cores;
 
 			if (size1 == 0) {
 				if (size2 == 0) {
