@@ -136,6 +136,7 @@ At the head node, the result is received over the socket  by the \texttt{WorkerH
 The architecture described above is what the application currently looks like. However, this does not fully satisfy the redundancy requirement. This is due to this project's deadline. In the following we describe what to change in and add to the architecture to fully support this requirement.
 
 \textcolor{red}{@Chris, describe what happens when a worker fails during execution. How is this detected and how is the head node responding to that? Also mention that we assume the head node to not fail.}
+When the connection to a worker fails, the head removes that worker from the worker pool and continues serving requests using the rest of the workers. All the jobs assigned to that worker are presumed lost. If the failure was temporary, the worker is responsible for re-initiating connection to the head and re-entering the worker pool as a new worker. In the current state of our implementation, workers do not attempt to recover. This wasn't deemed necessary, as such failures are so rare (we did not encounter any) that we did not consider them a significant resource leak. In a more robust implementation, a worker should attempt to publish its log files and stop, so as not to sit idle.
 
 \subsection{System policies}
 \label{subsec:policies}
