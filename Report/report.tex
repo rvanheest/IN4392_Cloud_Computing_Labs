@@ -49,7 +49,7 @@ Alexey Ilyushkin\\
 \maketitle
 
 \begin{abstract}
-In this report we describe our findings of 1 month of research in the area of cloud computing. We build a small prototype of a IaaS-based application that does image processing and runs on the Amazon Web Services (AWS) EC2 cloud platform. The main focus points in the design of this prototype are automation, scalability, load balancing, reliability and monitoring. To solve issues like scalability and load balancing, we researched, developed and compared several policies. Furthermore we measured the performance of the system by applying several metrics. \textcolor{red}{TODO \ldots 150 words}
+In this report we describe our findings of one month of research in the area of cloud computing. We build a small prototype of a IaaS-based application that does image processing and runs on the Amazon Web Services (AWS) EC2 cloud platform. The main focus points in the design of this prototype are automation, scalability, load balancing, reliability and monitoring. To solve issues like scalability and load balancing, we research, develop and compare several policies. Furthermore we measured the performance of the system by applying several metrics. \textcolor{red}{TODO \ldots 150 words}
 \end{abstract}
 
 \section{Introduction}
@@ -76,7 +76,7 @@ The prototype to be implemented will be an application that receives pictures fr
 
 The application is set up in such a way that all pictures are received at a head node, which allocates them to one of the worker node in its resource pool and leases new machines or releases idle machines when appropriate. We present and compare multiple policies for these problems.
 
-This report is structured as follows: first we will discuss the background of the application in \cref{sec:background}. What does it do in detail? What are its requirements and features? This is followed by the system design in \cref{sec:design}, where we focus on the internal workings of the application as well as several policies for both the processes of allocation and leasing/releasing nodes. We evaluate the application in \cref{sec:experiments} by applying several metrics. Finally we close the report with a discussion (\cref{sec:discussion}) and the conclusion (\cref{sec:conclusion}). In \cref{app:time} an overview of spent time is provided.
+This report is structured as follows: first we will discuss the background of the application in \cref{sec:background}. What does it do in detail? What are its requirements and features? This is followed by the system design in \cref{sec:design}, where we focus on the internal workings of the application as well as several policies for both the processes of allocation and leasing/releasing nodes. We evaluate the application in \cref{sec:experiments} by applying several metrics. Finally we close the report with a discussion in \cref{sec:discussion} and the conclusion in \cref{sec:conclusion}. In \cref{app:time} an overview of spent time is provided.
 
 \section{Background of the application}
 \label{sec:background}
@@ -190,8 +190,8 @@ In order to send tasks to the system for the purpose of experiments, we built a 
 \label{sec:conclusion}
 \textcolor{red}{\ldots}
 
-\bibliographystyle{abbrv}
-\bibliography{references}
+%\bibliographystyle{abbrv}
+%\bibliography{references}
 
 \appendix
 \section{Time sheet}
