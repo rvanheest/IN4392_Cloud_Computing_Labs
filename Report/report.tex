@@ -167,9 +167,16 @@ Until this point all policies have allocated all the provided tasks to eligible 
 \section{Experiments}
 \label{sec:experiments}
 \textcolor{red}{1.5 pages}
+
+\ldots
+
 \subsection{Experimental setup}
 \label{subsec:setup}
 \textcolor{red}{Working environment (EC2), general workload and monitoring tools and other libraries}
+
+Although the internal structures might differ, the general workings of all IaaS cloud services are mostly the same. Whether you choose for Amazon EC2, Microsoft Azure, OpenNebula or others, the approach taken in the previous sections would be the same on architectural level. For this prototype we decided to use Amazon EC2, mainly because both authors already had good experience with it. In order to lower the expenses on this project, we decided to go with \textcolor{red}{@Chris, can you go into the specifics of EC2, its settings in our tier, etc.}
+
+In order to send tasks to the system for the purpose of experiments, we built a bot that sends tasks to the head node. With this we are able to send continuous streams of tasks (with and without intervals) using a command line, as well as multi-tenant predefined experiments. 
 
 \subsection{Experimental results}
 \label{subsec:results}
