@@ -98,7 +98,7 @@ Besides these 5 tiers, we added support for multi-tenancy. It is possible for mu
 \label{sec:design}
 The application we present here can be seen as a prototype for a typical cloud centric work flow, where a user sends workloads to a head node, which distributes it over one or more workers (depending on whether the workloads are splittable into subtasks). Once the workload is processed, a result is send back to the head node, which forwards this result to the appropriate user. Based on the workloads, the head node needs to decide to which worker a workload is allocated and whether or not to lease or release workers, for which it uses certain policies.
 
-In this section we will discuss the system's architecture, work flow, communication between client, head node and workers, as well as the policies that are used in scaling and load balancing. Finally we will describe the additional features that is in the system: multi-tenancy.
+In this section we will discuss the system's architecture, work flow, communication between user, head node and workers, followed by the policies that are used in scaling and load balancing. Finally we will describe the additional features that is in the system: multi-tenancy. Where possible we will give a more general description of the design, rather than describing the system for the current image processing application. This might help in developing future projects based on the same principle.
 
 \subsection{Architectural overview}
 \label{subsec:resourceManagement}
