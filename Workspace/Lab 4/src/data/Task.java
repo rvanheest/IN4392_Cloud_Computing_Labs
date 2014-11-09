@@ -213,6 +213,23 @@ public class Task
 		+ "]";
 	}
 	
+	public Object[] toParts()
+	{
+		long[] stepsHead = this.stepsInHead();
+		long[] stepsWorker = this.stepsInWorker();
+		return new Object[] {
+			this.uuid,
+			this.px,
+			this.timeQueued,
+			stepsHead[0],
+			stepsHead[1],
+			stepsHead[2],
+			stepsWorker[0],
+			stepsWorker[1],
+			stepsWorker[2]
+		};
+	}
+	
 	@Override
 	public boolean equals(Object obj) 
 	{
