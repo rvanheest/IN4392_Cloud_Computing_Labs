@@ -64,7 +64,7 @@ public class MonitorThread
 		
 		// Condition 2: workload over 80%
 		boolean cond2 = true;
-		cond2 = samplingThread.getMostRecent().getSmoothPromisedWorkload() > 0.8;
+		cond2 = samplingThread.getMostRecent().getSmoothPromisedWorkload() > 0.5;
 		
 		
 		return any(new Boolean[] {
@@ -91,7 +91,7 @@ public class MonitorThread
 		Collection<Sample> history = getHistory(10, 30_000);
 		if (history.size()>3) // Monitoring thread not being starved
 			for (Sample sample : history)
-				if (sample.getSmoothPromisedWorkload() > 0.5)
+				if (sample.getSmoothPromisedWorkload() > 0.3)
 					cond1 = false;
 				
 				
