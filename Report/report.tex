@@ -176,7 +176,7 @@ $$PW = tasks/(cores + cores_{promised})$$
 With this metric we avoid the situation that the system will repeat resource requests, because machines are not ready yet.
 
 The last optimization we attempted was to lessen our system's responsiveness to demand spikes. Since workers take a while to boot, it is possible that the spike is already served by the time the workers become available and thus the resources are not put to use. For that reason we reduce the responsiveness of the system using an exponential smoothing function
-$$SPW_{i+1} = s*SPW_{i} + (1-s)*PW_{i+1}$$ where $0 \leq s \leq 1$ is the smoothing factor. We've set $s=0.95$
+$$SPW_{i+1} = s*SPW_{i} + (1-s)*PW_{i+1}$$ where $0 \leq s \leq 1$ is the smoothing factor. We've set $s=0.95$, with the sampling rate being $1Hz$.
 
 We base our decisions for leasing and releasing machines on metric $SPW$. More specifically, we aim to keep it in $0.5 \leq SPW \leq 0.8$. When $SPW$ is below $0.5$ for a given amount of time, a machine is released. When $SPW$ is above $0.8$, a request for a $25\%$ increase is immediately performed. Note that our policy for scaling up is more aggressive than our policy for scaling down. There are two reasons for that decision. The first reason for that is that we choose to err on the side of having more resources than necessary. The second reason is that leasing resources is a slower operation. Once the workload is exceeds the system's capacity, jobs accumulate in the queue until more workers arrive. Even more resources will be needed to consume the queue and return the scheduling delays to acceptable levels. For that reason we also allow the system to issue multiple resource requests, even if the first batch of workers is still booting. The system will scale down again once the queue has been consumed.
 
@@ -202,7 +202,7 @@ In order to lower the expenses on this project, we made use of the EC2 free tier
 
 In order to send tasks to the system for the purpose of experiments, we built a bot that sends tasks to the head node. With this we are able to send continuous streams of tasks (with user-defined intervals between requests) using a command line, as well as multi-tenant predefined experiments. 
 
-We will present here two cases. In the first experiment, demand rises and falls repeatedly but gradually over the course of a few minutes. Demand peaks at 1 image per second. In the second experiment, our system is surprised by a steady stream that exceeds its initial capacity. More specifically, the system starts with two workers available and the stream is one image every 2.5 seconds. With the processing times given earlier, we estimated that, with the worst performance by the workers, the system would need to scale 15 workers. 
+We will present here two cases. In the first experiment, demand rises and falls repeatedly but gradually over the course of a few minutes. Demand peaks at 1 image per second and the whole experiment lasts approximately 25 minutes. In the second experiment, our system is surprised by a steady stream that exceeds its initial capacity. More specifically, the system starts with two workers available and the stream is one image every 2.5 seconds for 10 minutes. With the processing times given earlier, we estimated that, with the worst performance by the workers, the system would need to scale 15 workers. 
 
 \subsection{Experimental results}
 \label{subsec:results}
