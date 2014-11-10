@@ -14,7 +14,7 @@
 \usepackage[nameinlink,capitalise]{cleveref}
 
 \begin{document}
-\title{Distributed mass image processing in a cloud environment}
+\title{Distributed Mass Image Processing in a Cloud Environment}
 
 \numberofauthors{5} 
 \author{
@@ -76,6 +76,8 @@ The prototype to be implemented will be an application that receives pictures fr
 
 The application is set up in such a way that all pictures are received at a head node, which allocates them to one of the worker node in its resource pool and leases new machines or releases idle machines when appropriate. We present and compare multiple policies for these problems.
 
+In this report we will focus on the general idea and the headlines of this project. If you are interested in implementation details, it is available at GitHub\footnote{\url{https://github.com/rvanheest/IN4392_Cloud_Computing_Labs}}.
+
 This report is structured as follows: first we will discuss the background of the application in \cref{sec:background}. What does it do in detail? What are its requirements and features? This is followed by the system design in \cref{sec:design}, where we focus on the internal workings of the application as well as several policies for both the processes of allocation and leasing/releasing nodes. We evaluate the application in \cref{sec:experiments} by applying several metrics. Finally we close the report with a discussion in \cref{sec:discussion} and the conclusion in \cref{sec:conclusion}. In \cref{app:time} an overview of spent time is provided.
 
 \section{Background of the application}
@@ -132,7 +134,6 @@ When a task is allocated to a certain worker, its workload will be send over the
 
 At the head node, the result is received over the socket  by the \texttt{WorkerHandle} which removes the corresponding task from the list of currently processed jobs and adds the result to the \texttt{ProcessedQueue}. There it waits until the \texttt{Responder} takes it out and sends it back to the user.
 
-\newpage
 \subsection{Architectural future improvements}
 \label{ArchitecturalFutureImprovements}
 The architecture described above is what the application currently looks like. However, this does not fully satisfy the redundancy requirement. This is due to this project's deadline. In the following we describe what to change in and add to the architecture to fully support this requirement.
@@ -162,15 +163,15 @@ A `\textit{future work}' policy that takes this processing length into account i
 
 Until this point all policies have allocated all the provided tasks to eligible workers. We defined the eligibility of a worker as not being flagged for decommission. However, when we extend this definition by following the philosophy that a worker should only have $2n$ tasks in its system ($n$ tasks in process and $n$ tasks in its queue, where $n$ is the number of processors in that worker node), we end up with a smaller set of workers that are available to receive new tasks. This means that the tasks stay in the head node as long as possible, rather than waiting in a queue in the worker node, which has the advantage that the worker can focus more of its time on processing the tasks rather then being busy with receiving tasks in its queue. Therefore the internal memory of the worker nodes can be used more for the execution of the tasks rather than storing dozens of next jobs. Besides that, using this type of policies makes the system easier to recover from a failing worker, since there are only two tasks in that worker that need to be rescheduled. We applied this paradigm to the \texttt{QueueLengthScheduler} and used this in the experiments presented in \cref{sec:experiments}. In `\textit{future work}' the \texttt{QueuePixelScheduler} will also be adapted to this paradigm.
 
-\begin{figure}[b!]
+\subsubsection*{Leasing and releasing policies}
+To decide on scaling the system up or down, the state of the system is sampled in given intervals. The information gathered includes the amount of tasks in the queue, in each worker, the total number of cores available and the number of workers that have been requested but have not connected yet. With this information we construct a workload metric $W$, which, as seen in one of our experiments in \cref{fig:scheduling-W}, predicts the scheduling delay: $$W = tasks/cores$$ where $tasks$ is the set of all the tasks in the queue and the workers, and $cores$ are the total number of available cores in the workers. Generally, when $W > 1$, the system has been receiving jobs faster than it can process them, while $0 < W < 1$ means that the system has enough resources.
+
+\begin{figure}[h!]
 	\centering
-	\includegraphics[width=\linewidth]{SchedulingDelay-W.png}
+	\includegraphics[width=0.9\linewidth]{SchedulingDelay-W.png}
 	\caption{The metric W correlates with scheduling delay}
 	\label{fig:scheduling-W}
 \end{figure}
-
-\subsubsection*{Leasing and releasing policies}
-To decide on scaling the system up or down, the state of the system is sampled in given intervals. The information gathered includes the amount of tasks in the queue, in each worker, the total number of cores available and the number of workers that have been requested but have not connected yet. With this information we construct a workload metric $W$, which, as seen in one of our experiments in \cref{fig:scheduling-W}, predicts the scheduling delay: $$W = tasks/cores$$ where $tasks$ is the set of all the tasks in the queue and the workers, and $cores$ are the total number of available cores in the workers. Generally, when $W > 1$, the system has been receiving jobs faster than it can process them, while $0 < W < 1$ means that the system has enough resources.
 
 We use $W$ to decide on leasing or releasing more workers. Because one worker takes a significant amount of time to boot and $W$ can be expected to stay above $1$ while the resources are under way, we introduce the metric of \textit{promised workload} which also considers booting machines: 
 $$PW = tasks/(cores + cores_{promised})$$
@@ -244,7 +245,6 @@ We attempted to run the first experiment with a more generous leasing policy, th
 	\label{fig:exp3-timeline}
 \end{figure}
 
-\newpage
 \section{Discussion}
 \label{sec:discussion}
 In the past month, we built a prototype of an application based on IaaS clouds. At first glance, the architecture is very straight forward and easy to extend. However, under the hood it can become quite difficult, especially when it comes to the policies part of the system. What is a good policy for scheduling, leasing and releasing? What is the most optimal combination of them all? How do we define fairness regarding the multi-tenancy? How do we make the system fault-tolerant and not do redundant processes or slow the system down performance wise? Trade off analyses have to be made for those topics.
@@ -272,6 +272,8 @@ Although it is still a new technology and cloud applications are harder to devel
 \appendix
 \section{Time sheet}
 \label{app:time}
+This appendix holds an overview of the number of hours spend on this project, divided in several categories. For a more detailed overview, we refer to our GitHub repository\footnote{\url{https://github.com/rvanheest/IN4392_Cloud_Computing_Labs}}.
+
 \begin{table}[h]
 \begin{tabular}{ll}
 \hline
