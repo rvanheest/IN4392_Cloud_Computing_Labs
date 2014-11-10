@@ -208,7 +208,7 @@ We will present here two cases. In the first experiment, demand rises and falls 
 \label{subsec:results}
 \textcolor{red}{Description of the experiments conducted to analyse each system feature, analyse them and describe the workload, present the operation of the system and analyse the results. See assignment}
 
-In the first experiment, we emulated users entering and staying in the system for a few minutes. We modelled that so that peaks and valleys of demand are created. The system was expected to scale up and down accordingly. In \cref{exp2-timeline} we can see how the system adjusted itself to the demand, thus demonstrating its elasticity. Demand is measured by the metric $W$, which we already showed to capture the system's need for more resources. We do not show the frequency or requests, as it doesn't correctly predict the need for resources, due to the workers' inconsistent performance. Apart from the first peek, where the system was overwhelmed, the system adjusted to demand smoothly. We attribute that first peak to the moment that our first workers' performance was capped, cutting our system's throughput by 90\%. In \cref{overhead-exp2} we can see how much time each task had to spend in the system, outside of being processed. We call this time \textit{overhead} and lower values are better. As can be seen, the vast majority of tasks experienced little to no overhead.
+In the first experiment, we emulated users entering and staying in the system for a few minutes. We modelled that so that peaks and valleys of demand are created. The system was expected to scale up and down accordingly. In \cref{fig:exp2-timeline} we can see how the system adjusted itself to the demand, thus demonstrating its elasticity. Demand is measured by the metric $W$, which we already showed to capture the system's need for more resources. We do not show the frequency or requests, as it doesn't correctly predict the need for resources, due to the workers' inconsistent performance. Apart from the first peek, where the system was overwhelmed, the system adjusted to demand smoothly. We attribute that first peak to the moment that our first workers' performance was capped, cutting our system's throughput by 90\%. In \cref{fig:overhead-exp2} we can see how much time each task had to spend in the system, outside of being processed. We call this time \textit{overhead} and lower values are better. As can be seen, the vast majority of tasks experienced little to no overhead.
 
 \begin{figure}[b!]
 	\centering
@@ -224,7 +224,7 @@ In the first experiment, we emulated users entering and staying in the system fo
 	\label{fig:overhead-exp2}
 \end{figure}
 
-In the second experiment, we wanted to test how the system would behave when overwhelmed by demand. As can be seen in \cref{const-timeline}, the system was overwhelmed at first, but succeeded in catching up to the demand and consumed the accumulated work. In \cref{overhead-const} we can see that the system performed much worse in this case, as expected. The overhead reached up to 2 minutes, due to the tasks waiting in the queue. For scale, the whole experiment lasted 10 minutes. 
+In the second experiment, we wanted to test how the system would behave when overwhelmed by demand. As can be seen in \cref{fig:const-timeline}, the system was overwhelmed at first, but succeeded in catching up to the demand and consumed the accumulated work. In \cref{fig:overhead-const} we can see that the system performed much worse in this case, as expected. The overhead reached up to 2 minutes, due to the tasks waiting in the queue. For scale, the whole experiment lasted 10 minutes. 
 
 \begin{figure}[b!]
 	\centering
@@ -242,7 +242,7 @@ In the second experiment, we wanted to test how the system would behave when ove
 
 We identify leasing times as the biggest cause of poor performance in our system. While demand scales up, scaling the system happens with a delay of 1 to 2 minutes. Requests issued in the meantime experience delays.
 
-We attempted to run the first experiment with a more generous leasing policy, that aims to keep $0.3 \leq SPW \leq 0.5$. To our surprise, the results were significantly worse, as seen in \cref{exp3-timeline}. We do not consider that to be the result of the policy. Instead, this shows us that our IaaS provider's throttling policy was the most influential factor in our experiments. For that reason, we consider running further experiments in these conditions a futile process.
+We attempted to run the first experiment with a more generous leasing policy, that aims to keep $0.3 \leq SPW \leq 0.5$. To our surprise, the results were significantly worse, as seen in \cref{fig:exp3-timeline}. We do not consider that to be the result of the policy. Instead, this shows us that our IaaS provider's throttling policy was the most influential factor in our experiments. For that reason, we consider running further experiments in these conditions a futile process.
 
 \begin{figure}[b!]
 	\centering
