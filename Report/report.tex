@@ -132,6 +132,7 @@ When a task is allocated to a certain worker, its workload will be send over the
 
 At the head node, the result is received over the socket  by the \texttt{WorkerHandle} which removes the corresponding task from the list of currently processed jobs and adds the result to the \texttt{ProcessedQueue}. There it waits until the \texttt{Responder} takes it out and sends it back to the user.
 
+\newpage
 \subsection{Architectural future improvements}
 \label{ArchitecturalFutureImprovements}
 The architecture described above is what the application currently looks like. However, this does not fully satisfy the redundancy requirement. This is due to this project's deadline. In the following we describe what to change in and add to the architecture to fully support this requirement.
@@ -188,14 +189,8 @@ In the research field of multi-tenancy, this brings up the philosophical questio
 
 \section{Experiments}
 \label{sec:experiments}
-\textcolor{red}{1.5 pages}
-
-\ldots
-
 \subsection{Experimental setup}
 \label{subsec:setup}
-\textcolor{red}{Working environment (EC2), general workload and monitoring tools and other libraries}
-
 Although the internal structures might differ, the general workings of all IaaS cloud services are mostly the same. Whether you choose for Amazon EC2, Microsoft Azure or another, the approach taken in the previous sections would be the same on architectural level. For this prototype we decided to use Amazon EC2, mainly because both authors already had good experience with it.
 
 In order to lower the expenses on this project, we made use of the EC2 free tier machines. Each of our machines was an instance of a preconfigured Ubuntu t2.micro image. Computing resources for these virtual machines is done with a credit system that allows one to exceed its nominal performance, but suffer limits later on to make up for the burst. This was a significant problem for us, as the performance would plummet to less than 10\% of the burst. As an example, an image that is processed in 3 seconds in a burst, would take 40 to 60 seconds. To make things even more complicated, the limits are not applied across all workers, which made worker performance very inconsistent. Our scheduling and scaling policies remained valid under the circumstances, but there is significant noise in our experiments nonetheless. We could not reduce the noise by averaging multiple experiments either, since the cause follows a strict pattern, starting with high performance and dropping shortly after. Another limitation to our experiments what that free-tier machines are limited to 20 at any given moment. This limited the scale of our experiments to use cases that could be served by 20 machines with low performance.
@@ -206,34 +201,32 @@ We will present here two cases. In the first experiment, demand rises and falls 
 
 \subsection{Experimental results}
 \label{subsec:results}
-\textcolor{red}{Description of the experiments conducted to analyse each system feature, analyse them and describe the workload, present the operation of the system and analyse the results. See assignment}
+In the first experiment, we emulated users entering and staying in the system for a few minutes. We modelled that so that peaks and valleys of demand are created. The system was expected to scale up and down accordingly. In \cref{fig:exp2-timeline} we can see how the system adjusted itself to the demand, thus demonstrating its elasticity. Demand is measured by the metric $W$, which we already showed to capture the system's need for more resources. We do not show the frequency or requests, as it doesn't correctly predict the need for resources, due to the workers' inconsistent performance. Apart from the first peek, where the system was overwhelmed, the system adjusted to demand smoothly. We attribute that first peak to the moment that our first workers' performance was capped, cutting our system's throughput by 90\%. In \cref{fig:overhead-exp2} we can see how much time each task had to spend in the system, outside of being processed. We call this time \textit{overhead} and lower values are better. As can be seen, the vast majority of tasks experienced little to no overhead.
 
-In the first experiment, we emulated users entering and staying in the system for a few minutes. We modelled that so that peaks and valleys of demand are created. The system was expected to scale up and down accordingly. In \cref{exp2-timeline} we can see how the system adjusted itself to the demand, thus demonstrating its elasticity. Demand is measured by the metric $W$, which we already showed to capture the system's need for more resources. We do not show the frequency or requests, as it doesn't correctly predict the need for resources, due to the workers' inconsistent performance. Apart from the first peek, where the system was overwhelmed, the system adjusted to demand smoothly. We attribute that first peak to the moment that our first workers' performance was capped, cutting our system's throughput by 90\%. In \cref{overhead-exp2} we can see how much time each task had to spend in the system, outside of being processed. We call this time \textit{overhead} and lower values are better. As can be seen, the vast majority of tasks experienced little to no overhead.
-
-\begin{figure}[b!]
+\begin{figure}[h!]
 	\centering
 	\includegraphics[width=\linewidth]{exp2-timeline.png}
 	\caption{The metric W correlates with scheduling delay}
 	\label{fig:exp2-timeline}
 \end{figure}
 
-\begin{figure}[b!]
+\begin{figure}[h!]
 	\centering
 	\includegraphics[width=\linewidth]{overhead-exp2.png}
 	\caption{The metric W correlates with scheduling delay}
 	\label{fig:overhead-exp2}
 \end{figure}
 
-In the second experiment, we wanted to test how the system would behave when overwhelmed by demand. As can be seen in \cref{const-timeline}, the system was overwhelmed at first, but succeeded in catching up to the demand and consumed the accumulated work. In \cref{overhead-const} we can see that the system performed much worse in this case, as expected. The overhead reached up to 2 minutes, due to the tasks waiting in the queue. For scale, the whole experiment lasted 10 minutes. 
+In the second experiment, we wanted to test how the system would behave when overwhelmed by demand. As can be seen in \cref{fig:const-timeline}, the system was overwhelmed at first, but succeeded in catching up to the demand and consumed the accumulated work. In \cref{fig:overhead-const} we can see that the system performed much worse in this case, as expected. The overhead reached up to 2 minutes, due to the tasks waiting in the queue. For scale, the whole experiment lasted 10 minutes. 
 
-\begin{figure}[b!]
+\begin{figure}[h!]
 	\centering
 	\includegraphics[width=\linewidth]{const-timeline.png}
 	\caption{The metric W correlates with scheduling delay}
 	\label{fig:const-timeline}
 \end{figure}
 
-\begin{figure}[b!]
+\begin{figure}[h!]
 	\centering
 	\includegraphics[width=\linewidth]{overhead-const.png}
 	\caption{The metric W correlates with scheduling delay}
@@ -242,20 +235,18 @@ In the second experiment, we wanted to test how the system would behave when ove
 
 We identify leasing times as the biggest cause of poor performance in our system. While demand scales up, scaling the system happens with a delay of 1 to 2 minutes. Requests issued in the meantime experience delays.
 
-We attempted to run the first experiment with a more generous leasing policy, that aims to keep $0.3 \leq SPW \leq 0.5$. To our surprise, the results were significantly worse, as seen in \cref{exp3-timeline}. We do not consider that to be the result of the policy. Instead, this shows us that our IaaS provider's throttling policy was the most influential factor in our experiments. For that reason, we consider running further experiments in these conditions a futile process.
+We attempted to run the first experiment with a more generous leasing policy, that aims to keep $0.3 \leq SPW \leq 0.5$. To our surprise, the results were significantly worse, as seen in \cref{fig:exp3-timeline}. We do not consider that to be the result of the policy. Instead, this shows us that our IaaS provider's throttling policy was the most influential factor in our experiments. For that reason, we consider running further experiments in these conditions a futile process.
 
-\begin{figure}[b!]
+\begin{figure}[h!]
 	\centering
 	\includegraphics[width=\linewidth]{exp3-timeline.png}
 	\caption{The metric W correlates with scheduling delay}
 	\label{fig:exp3-timeline}
 \end{figure}
 
+\newpage
 \section{Discussion}
 \label{sec:discussion}
-\textcolor{red}{1 page - main findings, tradeoffs inherent in the design of cloud-computing-based applications.}
-
-%Main findings of your work
 In the past month, we built a prototype of an application based on IaaS clouds. At first glance, the architecture is very straight forward and easy to extend. However, under the hood it can become quite difficult, especially when it comes to the policies part of the system. What is a good policy for scheduling, leasing and releasing? What is the most optimal combination of them all? How do we define fairness regarding the multi-tenancy? How do we make the system fault-tolerant and not do redundant processes or slow the system down performance wise? Trade off analyses have to be made for those topics.
 
 Also, in our current implementation, we have tried to stick to the standard Java library as much as possible. The only external dependency is the Amazon EC2 API. However, the standard Java library has some drawbacks regarding multithreading and data structures. Therefore we would advise to continue the development by writing code in a more functional style, where thread-safety and concurrency is easier to manage, safer to execute and less error prone. Also we recommend switching to a push-based model like ReactiveX\footnote{\url{http://reactivex.io/}}, which gives an extra boost in performance, as is shown by companies like SoundCloud and NetFlix\footnote{\url{http://techblog.netflix.com/2013/02/rxjava-netflix-api.html}}, rather than the pull-based model where you are continuously blocking threads while waiting for activities to happen.
@@ -267,8 +258,6 @@ On the other hand, there are a number of downsides to cloud computing. Cheaper v
 Another downside of using the cloud is that leasing new machines sometimes takes very long, mostly in the order of minutes (this actually depends on the cloud provider, as well as the type of machine requested). The problem with that is that, for workloads that fluctuate in a matter of minutes, often the workload for which the extra worker is leased is already consumed or the workloads have piled up while waiting for the additional machine. We see two separate solutions for this issue. One is to optimise for the lease time of machines. Rather than performing a new lease and a cold start when a new machine is needed, a buffer of pre-leased inactive can be maintained. A free-tier machine on an SSD drive in Amazon's EC2 takes half the time to do a warm start (from the stopped state) than it needs to do a cold start. The drawback of this is that you have to pay for the machine's storage, even when the machine is stopped but still in the pool of available machines. This isn't the best warm start possible either, since some resources (e.g IP address) need to be reassigned and a complete boot is performed. IaaS providers may provide even faster alternatives, though we did not have any available to us.
 
 The second solution is to improve the metric for workload prediction. Although this is not easy, since it asks for sophisticated and expensive to research methods like machine learning and feedback loops, it might be the best and cheapest way to go in the long run.
-
-\textcolor{red}{@Chris, use extrapolation on the results from the experiments to discuss the charged time and costs for 100.000, 1.000.000, 10.000.000 users and for 1 day/month/year}
 
 In our experiments, we experienced poor performance when demand rose. One reason for that was the leasing times. Another reason was that, due to the small scale of our experiments, small changes in demand where big proportionally to the system. We expect that in bigger environments, the system would scale with greater success. Since workers are independent from each other, or, given our suggestions for redundancy, depend on a constant number of other nodes, we believe that the only bottleneck for scalability will be the head node. The head node is quite light compared to a worker and, given a powerful machine, should be able to manage thousands of workers. Going beyond that, the head also has a finite potential for becoming distributed, as mentioned in \ref{ArchitecturalFutureImprovements}, which can increase scalability by an order of magnitude. For even greater demand, it is possible to duplicate the system and redirect requests so as to distribute them. Those systems do not need to collaborate at all and their scalability is infinite and limited only by the scalability of the DNS in front of the system.
 
@@ -283,7 +272,6 @@ Although it is still a new technology and cloud applications are harder to devel
 \appendix
 \section{Time sheet}
 \label{app:time}
-\textcolor{red}{Check this in the end!!!}
 \begin{table}[h]
 \begin{tabular}{ll}
 \hline
