@@ -197,46 +197,46 @@ In the research field of multi-tenancy, this brings up the philosophical questio
 
 Although the internal structures might differ, the general workings of all IaaS cloud services are mostly the same. Whether you choose for Amazon EC2, Microsoft Azure or another, the approach taken in the previous sections would be the same on architectural level. For this prototype we decided to use Amazon EC2, mainly because both authors already had good experience with it.
 
-In order to lower the expenses on this project, we made use of the EC2 free tier machines. Each of our machines was an instance of a preconfigured Ubuntu t2.micro image. Computing resources for these virtual machines is done with a credit system that allows one to exceed its nominal performance, but suffer limits later on to make up for the burst. This was a significant problem for us, as the performance would plummet to less than 10\% of the burst. As an example, an image that is processed in 3 seconds in a burst, would take 40 to 60 seconds. To make things even more complicated, the limits are not applied across all workers, which made worker performance very inconsistent. Our scheduling and scaling policies remained valid under the circumstances, but there is significant noise in our experiments nonetheless. We could not reduce the noise by averaging multiple experiments either, since the cause follows a strict pattern, starting with high performance and dropping shortly after. Another limitation to our experiments what that free-tier machines are limited to 20 at any given moment. This limited the scale of our experiments to use case that could be served by 20 machines with low performance.
+In order to lower the expenses on this project, we made use of the EC2 free tier machines. Each of our machines was an instance of a preconfigured Ubuntu t2.micro image. Computing resources for these virtual machines is done with a credit system that allows one to exceed its nominal performance, but suffer limits later on to make up for the burst. This was a significant problem for us, as the performance would plummet to less than 10\% of the burst. As an example, an image that is processed in 3 seconds in a burst, would take 40 to 60 seconds. To make things even more complicated, the limits are not applied across all workers, which made worker performance very inconsistent. Our scheduling and scaling policies remained valid under the circumstances, but there is significant noise in our experiments nonetheless. We could not reduce the noise by averaging multiple experiments either, since the cause follows a strict pattern, starting with high performance and dropping shortly after. Another limitation to our experiments what that free-tier machines are limited to 20 at any given moment. This limited the scale of our experiments to use cases that could be served by 20 machines with low performance.
 
 In order to send tasks to the system for the purpose of experiments, we built a bot that sends tasks to the head node. With this we are able to send continuous streams of tasks (with user-defined intervals between requests) using a command line, as well as multi-tenant predefined experiments. 
 
-We will present here two cases: in the first experiment, our system is surprised by a steady stream that exceeds its initial capacity. More specifically, the system starts with two workers available and the stream is one image every 2.5 seconds. With the processing times given earlier, we estimated that, with the worst performance by the workers, the system would need to scale 15 workers. In the second experiment, demand rises and falls over the course of a few minutes.
+We will present here two cases. In the first experiment, demand rises and falls repeatedly but gradually over the course of a few minutes. Demand peaks at 1 image per second. In the second experiment, our system is surprised by a steady stream that exceeds its initial capacity. More specifically, the system starts with two workers available and the stream is one image every 2.5 seconds. With the processing times given earlier, we estimated that, with the worst performance by the workers, the system would need to scale 15 workers. 
 
 \subsection{Experimental results}
 \label{subsec:results}
 \textcolor{red}{Description of the experiments conducted to analyse each system feature, analyse them and describe the workload, present the operation of the system and analyse the results. See assignment}
 
-In the first experiment, we emulated users entering and staying the system for a few minutes. We modeled that so that peaks and valleys of demand are created. The system was expected to scale up and down accordingly. In \cref{exp2-timeline.png} we can see how the system adjusted itself to the demand, thus demonstrating its elasticity. Demand is measured by the metric $W$, which we already showed to capture the system's need for more resources. Apart from a first peek, where the system was overwhelmed, the system adjusted to demand smoothly. We attribute that case to the moment that our workers' performance was capped, cutting our system's throughput by 90\%. In \cref{overhead-exp2.png} we can how much time each task had to spend in the system, outside of being processed. We call this time \textit{overhead} and lower values are preferred. As can be seen, the vast majority of tasks experienced little to no overhead.
+In the first experiment, we emulated users entering and staying in the system for a few minutes. We modelled that so that peaks and valleys of demand are created. The system was expected to scale up and down accordingly. In \cref{exp2-timeline} we can see how the system adjusted itself to the demand, thus demonstrating its elasticity. Demand is measured by the metric $W$, which we already showed to capture the system's need for more resources. We do not show the frequency or requests, as it doesn't correctly predict the need for resources, due to the workers' inconsistent performance. Apart from the first peek, where the system was overwhelmed, the system adjusted to demand smoothly. We attribute that first peak to the moment that our first workers' performance was capped, cutting our system's throughput by 90\%. In \cref{overhead-exp2} we can see how much time each task had to spend in the system, outside of being processed. We call this time \textit{overhead} and lower values are better. As can be seen, the vast majority of tasks experienced little to no overhead.
 
 \begin{figure}[b!]
 	\centering
 	\includegraphics[width=\linewidth]{exp2-timeline.png}
 	\caption{The metric W correlates with scheduling delay}
-	\label{fig:scheduling-W}
+	\label{fig:exp2-timeline}
 \end{figure}
 
 \begin{figure}[b!]
 	\centering
 	\includegraphics[width=\linewidth]{overhead-exp2.png}
 	\caption{The metric W correlates with scheduling delay}
-	\label{fig:scheduling-W}
+	\label{fig:overhead-exp2}
 \end{figure}
 
-In the second experiment, we wanted to test how the system would behave when overwhelmed by demand. As can be seen in \cref{const-timeline.png}, the system was overwhelmed at first, but succeeded in catching up to the demand and consumed the accumulated work. In \cref{overhead-const} we can see that the system performed much worse in this case, with the overhead reaching up to 2 minutes, due to the tasks waiting in the queue. For scale, the whole experiment lasted 10 minutes. 
+In the second experiment, we wanted to test how the system would behave when overwhelmed by demand. As can be seen in \cref{const-timeline}, the system was overwhelmed at first, but succeeded in catching up to the demand and consumed the accumulated work. In \cref{overhead-const} we can see that the system performed much worse in this case, as expected. The overhead reached up to 2 minutes, due to the tasks waiting in the queue. For scale, the whole experiment lasted 10 minutes. 
 
 \begin{figure}[b!]
 	\centering
 	\includegraphics[width=\linewidth]{const-timeline.png}
 	\caption{The metric W correlates with scheduling delay}
-	\label{fig:scheduling-W}
+	\label{fig:const-timeline}
 \end{figure}
 
 \begin{figure}[b!]
 	\centering
 	\includegraphics[width=\linewidth]{overhead-const.png}
 	\caption{The metric W correlates with scheduling delay}
-	\label{fig:scheduling-W}
+	\label{fig:overhead-const}
 \end{figure}
 
 
