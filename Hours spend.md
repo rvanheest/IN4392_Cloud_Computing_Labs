@@ -8,6 +8,7 @@ Experiment | 6
 Analysis   | 3
 Write      | 25
 Waste      | 37
+**Total**  | 182
 
 
 Name    | Date       | Time spend (hours) | Description                                                                     | Category (think, develop, experiment, analysis, write, waste)
