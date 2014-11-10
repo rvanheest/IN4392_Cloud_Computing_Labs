@@ -242,6 +242,14 @@ In the second experiment, we wanted to test how the system would behave when ove
 
 We identify leasing times as the biggest cause of poor performance in our system. While demand scales up, scaling the system happens with a delay of 1 to 2 minutes. Requests issued in the meantime experience delays.
 
+We attempted to run the first experiment with a more generous leasing policy, that aims to keep $0.3 \leq SPW \leq 0.5$. To our surprise, the results were significantly worse, as seen in \cref{exp3-timeline}. We do not consider that to be the result of the policy. Instead, this shows us that our IaaS provider's throttling policy was the most influential factor in our experiments. For that reason, we consider running further experiments in these conditions a futile process.
+
+\begin{figure}[b!]
+	\centering
+	\includegraphics[width=\linewidth]{exp3-timeline.png}
+	\caption{The metric W correlates with scheduling delay}
+	\label{fig:exp3-timeline}
+\end{figure}
 
 \section{Discussion}
 \label{sec:discussion}
