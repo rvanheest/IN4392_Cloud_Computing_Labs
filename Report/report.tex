@@ -254,8 +254,9 @@ Cloud computing has a number of benefits. First of all, it enables the company t
 
 On the other hand, there are a number of downsides to cloud computing. As you are renting the infrastructure, the resources are in a pool of shared infrastructure, where others as well might use some of the resources. Because of that, the system's performance will be inconsistent. Besides that, cloud computing may not be the best fit for your type of workloads. Some may have very specific performance and security requirements, which are not always guaranteed in a cloud environment. Finally we have to point out the general user community is not always convinced about the security of the cloud. However, a cloud product is as safe and secure as you make it. Using good firewalls, network gateways, anti virus and compliance scanning will help with the security issues.
 
-%Tradeoffs inherent in the design of cloud-computing-based applications
-% - takes long for a worker to start up after it is requested (solution => warm start instead of cold start, solution2 => improve metric to be more predictive (MACHINE LEARNING and FEEDBACK LOOPS)
+Another downside of using the cloud is that leasing new machines sometimes takes very long, mostly in the order of minutes. The problem with that is that either the workload for which the extra worker is leased is already consumed or the workloads pile up and the waiting time for a consumer is too long. We see two separate solutions for this issue. One is to not really release machines but rather stop machines and keep them in the pool. Booting up will then only take up seconds rather than minutes. The drawback of this is that you have to pay for the machine's storage, even when the machine is stopped but still in the pool of available machines.
+
+The second solution is to improve the metric for workload prediction. Although this is not easy, since it asks for sophisticated and expensive to research methods like machine learning and feedback loops, it might be the best and cheapest way to go in the long run.
 
 %Should the WantCloud CTO use IaaS-based clouds?
 
