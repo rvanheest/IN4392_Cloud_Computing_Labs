@@ -1,5 +1,13 @@
 This document specifies and logs the hours spend on this project. The first table present an overview, while the second specifies the details.
 
+Category   | Time spend (hours) 
+:--------- | ------------------:
+Think      | 24
+Develop    | 87
+Experiment | 6
+Analysis   | 3
+Write      | 25
+Waste      | 37
 
 
 Name    | Date       | Time spend (hours) | Description                                                                     | Category (think, develop, experiment, analysis, write, waste)
