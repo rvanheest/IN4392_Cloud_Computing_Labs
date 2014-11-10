@@ -3,10 +3,10 @@ This document specifies and logs the hours spend on this project. The first tabl
 Category   | Time spend (hours) 
 :--------- | ------------------:
 Think      | 24
-Develop    | 87
-Experiment | 6
+Develop    | 103
+Experiment | 12
 Analysis   | 3
-Write      | 25
+Write      | 31
 Waste      | 37
 **Total**  | **182**
 
@@ -31,23 +31,23 @@ Richard | 21-10-2014 | 3                  | Image processing                    
 Richard | 22-10-2014 | 3                  | Image processing                                                                | Develop
 Richard | 23-10-2014 | 6                  | Building small setup for sending images of socket to be processed + experiments | Develop - 67% / Experiment - 16% / Analysis - 17%
 Chris   | 23-10-2014 | 6                  | Scripts for deamonizing                                                         | Develop
-**Chris**   | 24-10-2014 | **???**                  | Scripts for deamonizing                                                         | **???**
+Chris   | 24-10-2014 | 4                 | Scripts for deamonizing                                                         | Develop
 Richard | 28-10-2014 | 6                  | Multithreaded the workers + started on the emulator + report setup              | Develop - 83% / Write - 16%
 Chris   | 28-10-2014 | 6                  | Head node                                                                       | Develop
 Richard | 29-10-2014 | 6                  | Finished Emulator + recover from failure on GitHub + introduction report        | Develop - 67% / Write time - 16% / Waste - 17%
 Chris   | 29-10-2014 | 6                  | Head node                                                                       | Develop
 Richard | 30-10-2014 | 6                  | Scheduler policies + cleanup work                                               | Develop
 Chris   | 30-10-2014 | 6                  | Head node                                                                       | Develop
-**Chris**   | 31-10-2014 | **???**                  | **???**                                                                             | **???**
-**Chris**   | 01-11-2014 | **???**                  | **???**                                                                             | **???**
+Chris   | 31-10-2014 | 7                  | Head node                                                                          | Develop
+Chris   | 01-11-2014 | 4                  | Head node                                                                             | Testing
 Richard | 05-11-2014 | 6                  | Scheduler policies + emulator + background section report                       | Develop - 50% / Write - 50%
 Chris   | 05-11-2014 | 6                  | Lease/release policy + head node                                                | Develop
 Richard | 06-11-2014 | 6                  | Bugfixes + schedulers + testing                                                 | Develop - 67% / Experiment - 16% / Analysis - 17%
 Chris   | 06-11-2014 | 6                  | Monitoring + testing                                                            | Develop - 67% / Experiment - 16% / Analysis - 17%
 Richard | 07-11-2014 | 6                  | Report writing                                                                  | Write
 Chris   | 07-11-2014 | 6                  | Bugfixes + testing                                                              | Develop - 50% / Experiment - 50%
-**Chris**   | 08-11-2014 | **???**                  | Lease/Release + bugfixes                                                        | **???** 
+Chris   | 08-11-2014 | 5                  | Lease/Release + bugfixes                                                        | Developing 
 Richard | 09-11-2014 | 14                 | Report writing                                                                  | Write
-**Chris**   | 09-11-2014 | **???**                  | Experiments + bugfixes + report writing                                         | **???**
+Chris   | 09-11-2014 | 6                  | Experiments + bugfixes + report writing                                         | **???**
 **Richard** | 10-11-2014 | **???**                  | Report writing                                                                  | Write
-**Chris**   | 10-11-2014 | **???**                  | Report writing                                                                  | Write
+Chris   | 10-11-2014 | 6                  | Report writing                                                                  | Write
