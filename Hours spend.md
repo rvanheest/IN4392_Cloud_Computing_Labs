@@ -48,6 +48,6 @@ Richard | 07-11-2014 | 6                  | Report writing                      
 Chris   | 07-11-2014 | 6                  | Bugfixes + testing                                                              | Develop - 50% / Experiment - 50%
 Chris   | 08-11-2014 | 5                  | Lease/Release + bugfixes                                                        | Developing 
 Richard | 09-11-2014 | 14                 | Report writing                                                                  | Write
-Chris   | 09-11-2014 | 6                  | Experiments + bugfixes + report writing                                         | **???**
+Chris   | 09-11-2014 | 6                  | Experiments + bugfixes + report writing                                         | 50% Testing - 50% Write
 Richard | 10-11-2014 | 6                  | Report writing                                                                  | Write
 Chris   | 10-11-2014 | 6                  | Report writing                                                                  | Write
