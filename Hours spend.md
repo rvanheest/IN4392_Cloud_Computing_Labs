@@ -1,22 +1,26 @@
-Name    | Date       | Time spend (hours) | Description
-:----   |:---------- | ------------------:|:-----------
-Richard | 23-09-2014 | 5                  | General architecture of a cloud system
-Chris   | 23-09-2014 | 5                  | General architecture of a cloud system
-Richard | 24-09-2014 | 6                  | General architecture of a cloud system/trying to get OpenNebula to work
-Chris   | 24-09-2014 | 6                  | General architecture of a cloud system/trying to get OpenNebula to work
-Richard | 01-10-2014 | 6                  | Researched the possibilities of working with OpenNebula Cloud
-Chris   | 01-10-2014 | 6                  | Researched the possibilities of working with OpenNebula Cloud
-Richard | 07-10-2014 | 4                  | Researched the possibilities of working with OpenNebula Cloud/Meeting with TA
-Chris   | 07-10-2014 | 4                  | Researched the possibilities of working with OpenNebula Cloud/Meeting with TA
-Richard | 08-10-2014 | 6                  | Researched the possibilities of working with OpenNebula Cloud
-Chris   | 08-10-2014 | 6                  | Researched the possibilities of working with OpenNebula Cloud
-Richard | 14-10-2014 | 6                  | Decided to switch to EC2
-Chris   | 14-10-2014 | 6                  | Decided to switch to EC2
-Richard | 15-10-2014 | 6                  | Image processing
-Chris   | 15-10-2014 | 6                  | Deamonizing
-Richard | 21-10-2014 | 3                  | Image processing
-Richard | 22-10-2014 | 3                  | Image processing
-Richard | 23-10-2014 | 6                  | Building small setup for sending images of socket to be processed + experiments
+This document specifies and logs the hours spend on this project. The first table present an overview, while the second specifies the details.
+
+
+
+Name    | Date       | Time spend (hours) | Description                                                                     |
+:----   |:---------- | ------------------:|:------------------------------------------------------------------------------- |
+Richard | 23-09-2014 | 5                  | General architecture of a cloud system                                          |
+Chris   | 23-09-2014 | 5                  | General architecture of a cloud system                                          |
+Richard | 24-09-2014 | 6                  | General architecture of a cloud system/trying to get OpenNebula to work         |
+Chris   | 24-09-2014 | 6                  | General architecture of a cloud system/trying to get OpenNebula to work         |
+Richard | 01-10-2014 | 6                  | Researched the possibilities of working with OpenNebula Cloud                   |
+Chris   | 01-10-2014 | 6                  | Researched the possibilities of working with OpenNebula Cloud                   |
+Richard | 07-10-2014 | 4                  | Researched the possibilities of working with OpenNebula Cloud/Meeting with TA   |
+Chris   | 07-10-2014 | 4                  | Researched the possibilities of working with OpenNebula Cloud/Meeting with TA   |
+Richard | 08-10-2014 | 6                  | Researched the possibilities of working with OpenNebula Cloud                   |
+Chris   | 08-10-2014 | 6                  | Researched the possibilities of working with OpenNebula Cloud                   |
+Richard | 14-10-2014 | 6                  | Decided to switch to EC2                                                        |
+Chris   | 14-10-2014 | 6                  | Decided to switch to EC2                                                        |
+Richard | 15-10-2014 | 6                  | Image processing                                                                |
+Chris   | 15-10-2014 | 6                  | Deamonizing                                                                     |
+Richard | 21-10-2014 | 3                  | Image processing                                                                |
+Richard | 22-10-2014 | 3                  | Image processing                                                                |
+Richard | 23-10-2014 | 6                  | Building small setup for sending images of socket to be processed + experiments |
 Chris   | 23-10-2014 | 6                  | Scripts for deamonizing
 **Chris**   | 24-10-2014 | ???                  | Scripts for deamonizing
 Richard | 28-10-2014 | 6                  | Multithreaded the workers + started on the emulator + report setup
