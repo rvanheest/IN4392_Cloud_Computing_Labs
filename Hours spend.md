@@ -49,5 +49,5 @@ Chris   | 07-11-2014 | 6                  | Bugfixes + testing                  
 Chris   | 08-11-2014 | 5                  | Lease/Release + bugfixes                                                        | Developing 
 Richard | 09-11-2014 | 14                 | Report writing                                                                  | Write
 Chris   | 09-11-2014 | 6                  | Experiments + bugfixes + report writing                                         | **???**
-**Richard** | 10-11-2014 | **???**                  | Report writing                                                                  | Write
+Richard | 10-11-2014 | 6                  | Report writing                                                                  | Write
 Chris   | 10-11-2014 | 6                  | Report writing                                                                  | Write
