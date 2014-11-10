@@ -6,7 +6,7 @@ Think      | 24
 Develop    | 103
 Experiment | 12
 Analysis   | 3
-Write      | 31
+Write      | 37
 Waste      | 37
 **Total**  | **210**
 
